@@ -31,7 +31,8 @@ def process_data(file_path, logger):
         sql_files = [line.strip() for line in lines[1:]]
 
         # ティッカーシンボルファイルからシンボルを読み込む
-        config = DB_Common_Utils.read_config_file('config.txt')
+        config_path = r"C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-03_SRC\config.txt"
+        config = DB_Common_Utils.read_config_file(config_path)
         symbol_file_path = config.get('symbol_file_path')  # ティッカーシンボルが記述されたファイルのパス
         with open(symbol_file_path, 'r') as symbol_file:
             symbols = [symbol.strip() for symbol in symbol_file.readlines()]
@@ -92,15 +93,13 @@ def process_data(file_path, logger):
 
                     # UPDATE文を実行
                     DB_INS_00_Utils.update_data_in_table(cursor, table_name, update_columns, update_values, 'symbol', symbol, logger)
-                    logger.info(f"{sql_file} のデータが正常に更新されました。")
-                    logger.debug(f"テーブル名: {table_name}, ティッカーシンボル: {symbol}")
+                    logger.info(f"{sql_file} が正常に更新されました。:{table_name}:{symbol}")
 
                 else:
                     # データが存在しない場合はINSERT文を実行
                     # INSERT文を実行
                     DB_INS_00_Utils.insert_data_into_table(cursor, table_name, members, insert_values, logger)
-                    logger.info(f"{sql_file} のデータが正常に登録されました。")
-                    logger.debug(f"テーブル名: {table_name}, ティッカーシンボル: {symbol}")
+                    logger.info(f"{sql_file} が正常に登録されました。:{table_name}:{symbol}")
 
         # カーソルと接続を閉じる
         cursor.close()
