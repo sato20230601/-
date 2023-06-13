@@ -1,0 +1,11 @@
+symbol_file_path=C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-03_SRC\symbols.txt
+csv_file_path=C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-03_SRC\data.csv
+sp500_url=https://en.wikipedia.org/wiki/List_of_S%26P_500_companies
+sp500_csv_file_path=C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-03_SRC\sp500_data.csv
+rus2000_url=https://nikkeiyosoku.com/russell2000/holdings/
+rus2000_csv_file_path=C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-03_SRC\rus2000_data.csv
+FinCloseDate_url=https://www.rakuten-sec.co.jp/web/market/calendar/F_SCH_SOURCE.csv
+FinCloseDate_csv_file_path=G:\マイドライブ\CSV\FinCloseDate_data.csv
+EcoCalender_url=https://www.rakuten-sec.co.jp/web/market/ginfo_calendar/keizai_calendar_all_YYYYMM.xml
+EcoCalender_csv_file_path=G:\マイドライブ\CSV\EcoCalender.csv
+Trading_History_csv_file_path=G:\マイドライブ\CSV\楽天\tradehistory(US).csv
