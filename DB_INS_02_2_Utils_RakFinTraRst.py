@@ -12,7 +12,7 @@ import requests
 from bs4 import BeautifulSoup
 
 # 登録更新処理共通
-# import DB_INS_00_Utils
+import DB_INS_00_Utils
 
 # 共通関数の読み込み
 import DB_Common_Utils
@@ -31,7 +31,8 @@ def csv_process_data(file_path, config_key, logger):
         sql_files = [line.strip() for line in lines[1:]]
 
         # CSVデータファイルのパスをconfigファイルより取得
-        config = DB_Common_Utils.read_config_file('config.txt')
+        config_path = r"C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-03_SRC\config.txt"
+        config = DB_Common_Utils.read_config_file(config_path)
         csv_file_path = config.get(config_key)
 
         # MySQLに接続
@@ -47,7 +48,7 @@ def csv_process_data(file_path, config_key, logger):
         for sql_file in sql_files:
 
             sql_file_path = f"{directory_path}/{sql_file}"
-            table_name, members, additional_statement = DB_Common_Utils.get_table_name_and_members(sql_file_path)
+            table_name, members, additional_statement = DB_INS_00_Utils.get_table_name_and_members(sql_file_path)
 
             # CSVファイルのデータをテーブルに登録
             with open(csv_file_path, 'r', newline='', encoding='utf-8') as csvfile:
