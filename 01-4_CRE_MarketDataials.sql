@@ -1,0 +1,22 @@
+CREATE TABLE MarketData (
+  symbol VARCHAR(255) PRIMARY KEY,
+  previousClose DECIMAL(18, 2),
+  open DECIMAL(18, 2),
+  dayLow DECIMAL(18, 2),
+  dayHigh DECIMAL(18, 2),
+  regularMarketPreviousClose DECIMAL(18, 2),
+  regularMarketOpen DECIMAL(18, 2),
+  regularMarketDayLow DECIMAL(18, 2),
+  regularMarketDayHigh DECIMAL(18, 2),
+  volume BIGINT,
+  regularMarketVolume BIGINT,
+  averageVolume BIGINT,
+  averageVolume10days BIGINT,
+  averageDailyVolume10Day BIGINT,
+  bid DECIMAL(18, 2),
+  ask DECIMAL(18, 2),
+  bidSize BIGINT,
+  askSize BIGINT,
+  INS_DATE datetime,
+  UPD_DATE datetime
+);
