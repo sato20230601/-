@@ -1,0 +1,6 @@
+C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-01_SQL
+01-1_CRE_Company.sql
+01-2_CRE_Address.sql
+01-3_CRE_Financials.sql
+01-4_CRE_MarketDataials.sql
+01-5_CRE_RiskAssessments.sql

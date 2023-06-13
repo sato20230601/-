@@ -1,0 +1,2 @@
+C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-01_SQL
+01-6_CRE_StockTransaction.sql
