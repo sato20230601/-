@@ -1,2 +1,3 @@
 C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-01_SQL
 01-7_CRE_sp500.sql
+01-7_CRE_sp500_diff_record.sql
