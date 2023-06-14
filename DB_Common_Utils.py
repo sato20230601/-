@@ -82,3 +82,4 @@ def drop_table(cursor, table_name, logger):
         logger.error("エラーメッセージ: %s", err.msg)
         logger.error("トレースバック情報: %s", traceback.format_exc())  # 修正: トレースバック情報をログに出力
 
+
