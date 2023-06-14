@@ -32,7 +32,8 @@ def sp500_process_data(file_path, config_key, logger):
         sql_files = [line.strip() for line in lines[1:]]
 
         # 「sp500_url」と「500_csv_file_path」のパスをconfigファイルより取得
-        config = DB_Common_Utils.read_config_file('config.txt')
+        config_path = r"C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-03_SRC\config.txt"
+        config = DB_Common_Utils.read_config_file(config_path)
         sp500_url = config.get('sp500_url')
         sp500_csv_file_path = config.get('sp500_csv_file_path')
 
@@ -78,12 +79,15 @@ def sp500_process_data(file_path, config_key, logger):
             logger.debug(members)
             logger.debug(additional_statement)
 
-            # CSVファイルのデータをテーブルに登録
-            with open(sp500_csv_file_path, 'r', newline='', encoding='utf-8') as csvfile:
-                csv_reader = csv.reader(csvfile, delimiter='\t')
-                next(csv_reader)  # ヘッダー行をスキップする場合はコメントアウト
+            sp500_data = DB_INS_00_Utils.get_sp500_recent_data(cursor,table_name,logger)
 
-                for row_index, row in enumerate(csv_reader, start=1):
+            csv_data = DB_INS_00_Utils.read_csv_data(sp500_csv_file_path)
+
+            if DB_INS_00_Utils.check_diff(cursor,csv_data, sp500_data,logger):
+
+                # TRUEの場合差分があるので登録を行う。
+
+                for row_index, row in enumerate(csv_data, start=1):
 
                     # 空白を除外してデータを整形
                     row = [value.strip() for value in row]
@@ -152,6 +156,9 @@ def sp500_process_data(file_path, config_key, logger):
                         logger.error("INSERT文の実行中にエラーが発生しました:", error)
                         logger.error("対象行番号:[%d]", row_index)  # 対象行番号をログに出力
                         raise  # エラーを再度発生させて処理を終了
+     
+            else:
+                logger.info("データに差分はありませんでした。スキップします。")
 
         # カーソルと接続を閉じる
         cursor.close()
