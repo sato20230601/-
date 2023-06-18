@@ -87,15 +87,16 @@ def rus2000_process_data(file_path, config_key, logger):
         sql_files = [line.strip() for line in lines[1:]]
 
         # 「rus2000_url」と「rus2000_csv_file_path」のパスをconfigファイルより取得
-        config = DB_Common_Utils.read_config_file('config.txt')
+        config_path = r"C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-03_SRC\config.txt"
+        config = DB_Common_Utils.read_config_file(config_path)
         rus2000_url = config.get('rus2000_url')
         rus2000_csv_file_path = config.get('rus2000_csv_file_path')
 
         headers = DB_Common_Utils.get_headers_from_cookies(rus2000_url)
 
-        # ページ1から10までのデータを取得
+        # ページ1から100までのデータを取得
         all_data = []
-        for page in range(1, 11):
+        for page in range(1, 100):
             page_data = scrape_data(headers,page)
             all_data.extend(page_data)
 	
@@ -104,7 +105,7 @@ def rus2000_process_data(file_path, config_key, logger):
             writer = csv.writer(csvfile, delimiter='\t')
 
             # ヘッダー行を書き込む
-            writer.writerow(['No', 'Symbol', 'StockName', 'Sector', 'Industry'])  # ヘッダー行の書き込み
+            writer.writerow(['No','Symbol', 'StockName', 'Sector', 'Industry'])  # ヘッダー行の書き込み
 
             # データ行を書き込む
             writer.writerows(all_data)  # データ行の書き込み
@@ -129,65 +130,75 @@ def rus2000_process_data(file_path, config_key, logger):
             logger.debug(members)
             logger.debug(additional_statement)
 
-            # CSVファイルのデータをテーブルに登録
-            with open(rus2000_csv_file_path, 'r', newline='', encoding='utf-8') as csvfile:
-                csv_reader = csv.reader(csvfile, delimiter='\t')
-                next(csv_reader)  # ヘッダー行をスキップする場合はコメントアウト
+            rus2000_data = DB_INS_00_Utils.get_recent_data(cursor,table_name,logger)
 
-                for row_index, row in enumerate(csv_reader, start=1):
+            csv_data = DB_INS_00_Utils.read_csv_data(rus2000_csv_file_path,logger)
 
-                    # 空白を除外してデータを整形
-                    row = [value.strip() for value in row]
-                    logger.debug(f"row: {row}")
+            if DB_INS_00_Utils.check_diff(cursor,"rus2000_diff_record",csv_data, rus2000_data,logger):
 
-                    # 「Date_YYYYMMDD」のデータを追加
-                    date_yyyymmdd = datetime.now().strftime("%Y-%m-%d")
-                    row.insert(0, date_yyyymmdd)
+                # TRUEの場合差分があるので登録を行う。
 
-                    # INSERT文を実行
-                    insert_values = []
-                    for member, value in zip(members, row):
-                        logger.debug(f"member:{member}")
-                        logger.debug(f"value:{value}")
-                        
-                        if member == 'Date_YYYYMMDD':
-                            insert_values.append(f'{value}')
-                        elif member == 'INS_DATE':
-                            insdate = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                            insert_values.append(f'{insdate}')
-                        elif member == 'UPD_DATE':
-                            insert_values.append(None)
-                        else:
-                            insert_values.append(f'{value}')
-                            logger.debug(f"insert_values:{insert_values}")
+                # CSVファイルのデータをテーブルに登録
+                with open(rus2000_csv_file_path, 'r', newline='', encoding='utf-8') as csvfile:
+                    csv_reader = csv.reader(csvfile, delimiter='\t')
+                    next(csv_reader)  # ヘッダー行をスキップする場合はコメントアウト
 
-                    # INSERT文を実行
-                    insert_query = f"""
-                    INSERT INTO {table_name}
-                        ({', '.join(members)})
-                    VALUES
-                        ({', '.join(['%s'] * len(members))})
-                    """
-                    insert_query += additional_statement
-                    insert_values.append(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))  # INS_DATEの値を追加
-                    insert_values.append(None)  # UPT_DATEの値を追加
+                    for row_index, row in enumerate(csv_reader, start=1):
 
-                    # SQL文を表示またはログファイルに書き込み
-                    logger.debug("実行するSQL文:")
-                    logger.debug(insert_query)
-                    logger.debug(insert_values)
-                    # logger.info(insert_query % tuple(insert_values))  # 値をセットしたSQL文を表示
-                    print(insert_query)
-                    print(insert_values)
-                    try:
+                        # 空白を除外してデータを整形
+                        row = row[1:]  # Noを除外するためにスライスを使用
+                        row = [value.strip() for value in row]
+                        logger.debug(f"row: {row}")
+
+                        # 「Date_YYYYMMDD」のデータを追加
+                        date_yyyymmdd = datetime.now().strftime("%Y-%m-%d")
+                        row.insert(0, date_yyyymmdd)
+
                         # INSERT文を実行
-                        cursor.execute(insert_query, insert_values)
-                        cnx.commit()
-                        logger.info("データを挿入しました。:[%d]", row_index)
-                    except mysql.connector.Error as error:
-                        logger.error("INSERT文の実行中にエラーが発生しました:", error)
-                        logger.error("対象行番号:[%d]", row_index)  # 対象行番号をログに出力
-                        raise  # エラーを再度発生させて処理を終了
+                        insert_values = []
+                        for member, value in zip(members, row):
+                            logger.debug(f"member:{member}")
+                            logger.debug(f"value:{value}")
+                        
+                            if member == 'Date_YYYYMMDD':
+                                insert_values.append(f'{value}')
+                            elif member == 'INS_DATE':
+                                insdate = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                insert_values.append(f'{insdate}')
+                            elif member == 'UPD_DATE':
+                                insert_values.append(None)
+                            else:
+                                insert_values.append(f'{value}')
+                                logger.debug(f"insert_values:{insert_values}")
+
+                        # INSERT文を実行
+                        insert_query = f"""
+                        INSERT INTO {table_name}
+                            ({', '.join(members)})
+                        VALUES
+                            ({', '.join(['%s'] * len(members))})
+                        """
+                        insert_query += additional_statement
+                        insert_values.append(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))  # INS_DATEの値を追加
+                        insert_values.append(None)  # UPT_DATEの値を追加
+
+                        # SQL文を表示またはログファイルに書き込み
+                        logger.debug("実行するSQL文:")
+                        logger.debug(insert_query)
+                        logger.debug(insert_values)
+                        logger.info(insert_query % tuple(insert_values))  # 値をセットしたSQL文を表示
+                        try:
+                            # INSERT文を実行
+                            cursor.execute(insert_query, insert_values)
+                            cnx.commit()
+                            logger.info("データを挿入しました。:[%d]", row_index)
+                        except mysql.connector.Error as error:
+                            logger.error("INSERT文の実行中にエラーが発生しました:", error)
+                            logger.error("対象行番号:[%d]", row_index)  # 対象行番号をログに出力
+                            raise  # エラーを再度発生させて処理を終了
+
+            else:
+                logger.info("データに差分はありませんでした。スキップします。")
 
         # カーソルと接続を閉じる
         cursor.close()
