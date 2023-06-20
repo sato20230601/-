@@ -172,10 +172,21 @@ def get_table_name_and_members(sql_file_path):
 
 def insert_data_into_table(cursor, table_name, columns, values, logger):
 
+    # ログ出力: 開始メッセージと入力変数
+    if logger:
+        logger.info(f"--- 関数 insert_data_into_table 開始 ---")
+        logger.info(f"table_name: {table_name}")
+        logger.info(f"columns: {columns}")
+        logger.info(f"values: {values}")
+
     # INSERT文を構築
     placeholders = ', '.join(['%s'] * len(columns))
     columns_str = ', '.join(columns)
     insert_query = f"INSERT INTO {table_name} ({columns_str}) VALUES ({placeholders})"
+
+    # ログ出力: INSERT文
+    if logger:
+        logger.info(f"生成されたINSERT文: {insert_query}")
 
     # データを挿入
     DB_Common_Utils.execute_sql_query(cursor, insert_query, values, logger)
@@ -190,6 +201,8 @@ def update_data_in_table(cursor, table_name, update_columns, values, condition_c
     DB_Common_Utils.execute_sql_query(cursor, update_query, values + [condition_value], logger)
 
 # 重複しないレコードの登録用INSERT文の作成
+# 呼び出し元関数
+# DB_CRE_07_Trading_History
 def generate_insert_sql(tmp_table_name, table_name, members, logger=None):
     # ログ出力: 開始メッセージと入力変数
     if logger:
@@ -203,30 +216,43 @@ def generate_insert_sql(tmp_table_name, table_name, members, logger=None):
 
     # SELECT文の作成
     select_columns = []
+    insert_columns = []
     for member in members:
-        if member == 'id':
-            continue
-        elif member == 'INS_DATE':
+
+        # INSERT句の作成
+        insert_columns.append(member)
+
+        # SELECT句の作成
+        if member == 'INS_DATE':
             select_columns.append('CURRENT_TIMESTAMP')
         elif member == 'UPD_DATE':
             select_columns.append('NULL')
         else:
             select_columns.append(f"TMP_TABLE.{member}")
 
-    select_sql = f"SELECT {', '.join(select_columns)} FROM {tmp_table_name} AS TMP_TABLE LEFT JOIN {table_name} AS REAL_TABLE ON "
-
-    # ON句の条件を追加
-    for i in range(num_members -2 ):
-        if members[i] not in ['id', 'credit_type', 'settlement_deadline', 'tax', 'commission', 'settlement_amount_usd']:
-            if i > 0:
-                select_sql += " AND "
-            select_sql += f"TMP_TABLE.{members[i]} = REAL_TABLE.{members[i]}"
+    select_sql = (
+        f"SELECT {', '.join(select_columns)} FROM "
+        f"{tmp_table_name} TMP_TABLE "
+        f"LEFT JOIN {table_name} REAL_TABLE "
+        "ON "
+        "REAL_TABLE.trade_date = TMP_TABLE.trade_date AND "
+        "REAL_TABLE.settlement_date = TMP_TABLE.settlement_date AND "
+        "REAL_TABLE.ticker = TMP_TABLE.ticker AND "
+        "REAL_TABLE.buy_sell_type = TMP_TABLE.buy_sell_type AND "
+        "REAL_TABLE.No = TMP_TABLE.No"
+    )
 
     # WHERE句を追加してREAL_TABLEにデータが存在しないレコードを抽出
-    select_sql += f" WHERE REAL_TABLE.id IS NULL"
+    select_sql += (
+        " WHERE REAL_TABLE.No is NULL OR "
+        "REAL_TABLE.No < TMP_TABLE.No OR "
+        "REAL_TABLE.quantity <> TMP_TABLE.quantity"
+        " ORDER BY 1,2,3,4,5"
+    )
+    logger.info(f"select_sql文: {select_sql}")
 
     # INSERT文の作成
-    insert_sql = f"INSERT INTO {table_name} ({', '.join(members)}) {select_sql}"
+    insert_sql = f"INSERT INTO {table_name} ({', '.join(insert_columns)}) {select_sql}"
 
     # ログ出力: INSERT文
     if logger:
@@ -238,4 +264,3 @@ def generate_insert_sql(tmp_table_name, table_name, members, logger=None):
         logger.info(f"戻り値: {insert_sql}")
 
     return insert_sql
-
