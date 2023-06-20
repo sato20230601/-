@@ -8,6 +8,7 @@ import requests
 
 import mysql.connector
 from configparser import ConfigParser
+from collections import defaultdict
 
 import sys
 
@@ -60,34 +61,80 @@ def Trading_History_insert_tmp_data(file_path, config_key ,tmp_table_name ,logge
             logger.debug(members)
             logger.debug(additional_statement)
 
+            # グループごとのカウントを管理する辞書
+            group_counts = defaultdict(int)
+
             # CSVファイルのデータをテーブルに登録
             with open(Trading_History_csv_file_path, 'r', newline='', encoding='utf-8') as csvfile:
                 csv_reader = csv.reader(csvfile, delimiter=',', quotechar='"')
                 next(csv_reader)  # ヘッダー行をスキップする場合はコメントアウト
 
                 for row_index, row in enumerate(csv_reader, start=1):
-                    # 空白を除外してデータを整形
-                    row = [value.strip() for value in row]
-                    logger.debug(f"row: {row}")
 
-                    # INSERT文を実行
+                    # 毎回初期化を行う。
+                    csv_data = {}
+
+                    processed_row = []
+                    for value in row:
+
+                        # カンマが含まれていたら除外する。
+                        value = value.strip().replace(',', '')
+
+                        # NULLまたは"-"の場合、Noneに変換する
+                        value = None if value in ('', '-') else value
+                        processed_row.append(value)
+
+                    # グループのキーを作成
+                    group_key = (
+                        processed_row[0],  # trade_date
+                        processed_row[1],  # settlement_date
+                        processed_row[2],  # ticker
+                        processed_row[6]   # buy_sell_type
+                    )
+
+                    # グループ内のカウントを取得
+                    group_count = group_counts[group_key]
+
+                    # Noにカウント値をセット
+                    csv_data['No'] = group_count + 1
+                    
+                    # グループのカウントを更新
+                    group_counts[group_key] = csv_data['No']
+
+                    # Trading_Historyのカラムに合わせてデータの作成を行う。
+                    csv_data['trade_date'] = processed_row[0]
+                    csv_data['settlement_date'] = processed_row[1]
+                    csv_data['ticker'] = processed_row[2]
+                    csv_data['buy_sell_type'] = processed_row[6]
+                    csv_data['security_name'] = processed_row[3]
+                    csv_data['account'] = processed_row[4]
+                    csv_data['transaction_type'] = processed_row[5]
+                    csv_data['credit_type'] = processed_row[7]
+                    csv_data['settlement_deadline'] = processed_row[8]
+                    csv_data['settlement_currency'] = processed_row[9]
+                    csv_data['quantity'] = processed_row[10]
+                    csv_data['unit_price'] = processed_row[11]
+                    csv_data['execution_price'] = processed_row[12]
+                    csv_data['exchange_rate'] = processed_row[13]
+                    csv_data['commission'] = processed_row[14]
+                    csv_data['tax'] = processed_row[15]
+                    csv_data['settlement_amount_usd'] = processed_row[16]
+                    csv_data['settlement_amount_jpy'] = processed_row[17]
+
+                    # INSERT文を作成
                     insert_values = []
-                    for member, value in zip(members, row):
+                    for member in members:
                         logger.debug(f"member:{member}")
-                        logger.debug(f"value:{value}")
-
-                         # カンマが含まれていたら除外する。
-                        value = value.replace(',', '')
 
                         if member == 'INS_DATE':
                             insdate = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                             insert_values.append(insdate)
+
                         elif member == 'UPD_DATE':
                             insert_values.append(None)
 
                         else:
-                            # NULLまたは"-"の場合、Noneに変換する
-                            insert_values.append(None if value in ('', '-') else value)
+                            insert_values.append(csv_data.get(member))
                             logger.debug(f"insert_values:{insert_values}")
 
                     # INSERT文を実行
@@ -98,16 +145,8 @@ def Trading_History_insert_tmp_data(file_path, config_key ,tmp_table_name ,logge
                         ({', '.join(['%s'] * len(members))})
                     """
                     # insert_query += additional_statement
-                    insert_values.append(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))  # INS_DATEの値を追加
-                    insert_values.append(None)  # UPT_DATEの値を追加
 
                     # SQL文を表示またはログファイルに書き込み
-                    logger.debug("実行するSQL文:insert_query")
-                    logger.debug(insert_query)
-                    logger.debug("実行するSQL文:insert_values")
-                    logger.debug(insert_values)
-                    logger.debug("実行するSQL文:insert_query2")
-                    logger.debug(insert_query)
                     logger.debug("実行するSQL文:値セット")
                     logger.info(insert_query % tuple(insert_values))  # 値をセットしたSQL文を表示
                     try:
