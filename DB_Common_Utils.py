@@ -60,25 +60,3 @@ def execute_sql_query(cursor, query, values, logger):
         logger.error("トレースバック情報: %s", traceback.format_exc())  # 修正: トレースバック情報をログに出力
         return None
 
-# テーブルの削除を実行する。
-def drop_table(cursor, table_name, logger):
-    try:
-        # テーブルの存在を確認
-        if check_table_existence(cursor, table_name):
-            # テーブル削除のSQL文を生成
-            query = f"DROP TABLE {table_name}"
-
-            # SQLクエリを実行
-            logger.debug(query)
-            cursor.execute(query)
-
-            logger.info("テーブルの削除が完了しました。")
-        else:
-            logger.info("削除対象のテーブルは存在しません。")
-
-    except mysql.connector.Error as err:
-        logger.error("テーブルの削除に問題がありました。")
-        logger.error("エラーコード: %s", err.errno)
-        logger.error("エラーメッセージ: %s", err.msg)
-        logger.error("トレースバック情報: %s", traceback.format_exc())  # 修正: トレースバック情報をログに出力
-

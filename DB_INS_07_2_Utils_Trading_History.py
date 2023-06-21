@@ -23,7 +23,7 @@ import DB_INS_00_Utils
 # 共通関数の読み込み
 import DB_Common_Utils
 
-def Trading_History_insert_tmp_data(file_path, config_key ,tmp_table_name ,logger):
+def Trading_History_insert_tmp_data(cursor, file_path, config_key ,tmp_table_name ,logger):
     try:
         # ファイルからディレクトリパスとSQLファイル名を読み込む
         with open(file_path, 'r', encoding='utf-8') as file:
@@ -40,12 +40,6 @@ def Trading_History_insert_tmp_data(file_path, config_key ,tmp_table_name ,logge
         config_path = r"C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-03_SRC\config.txt"
         config = DB_Common_Utils.read_config_file(config_path)
         Trading_History_csv_file_path = config.get('Trading_History_csv_file_path')
-
-        # MySQLに接続
-        cnx = DB_Common_Utils.get_mysql_connection()
-
-        # カーソルを取得
-        cursor = cnx.cursor()
 
         # ループの外でエラーフラグを初期化
         has_error = False
@@ -152,17 +146,12 @@ def Trading_History_insert_tmp_data(file_path, config_key ,tmp_table_name ,logge
                     try:
                         # INSERT文を実行
                         cursor.execute(insert_query, insert_values)
-                        cnx.commit()
                         logger.info("データを挿入しました。:[%d]", row_index)
                     except mysql.connector.Error as error:
                         logger.error("INSERT文の実行中にエラーが発生しました:", error)
                         logger.error("対象行番号:[%d]", row_index)  # 対象行番号をログに出力
                         raise  # エラーを再度発生させて処理を終了
 
-        # カーソルと接続を閉じる
-        cursor.close()
-        cnx.commit()  # トランザクションをコミットする
-        cnx.close()
         return table_name, members
         logger.info(f"処理が完了しました。SQLファイル: {sql_file}")
 
@@ -179,14 +168,8 @@ def Trading_History_insert_tmp_data(file_path, config_key ,tmp_table_name ,logge
     else:
         logger.info("処理が正常に終了しました。")
 
-def Trading_History_insert_data( insert_sql,logger ):
+def Trading_History_insert_data( cursor,insert_sql,logger ):
     try:
-
-        # MySQLに接続
-        cnx = DB_Common_Utils.get_mysql_connection()
-
-        # カーソルを取得
-        cursor = cnx.cursor()
 
         # エラーフラグを初期化
         has_error = False
@@ -196,7 +179,6 @@ def Trading_History_insert_data( insert_sql,logger ):
             # INSERT文を実行
             cursor.execute(insert_sql)
 
-            cnx.commit()
             logger.info("データを挿入しました。")
             
         except mysql.connector.Error as error:
@@ -205,9 +187,6 @@ def Trading_History_insert_data( insert_sql,logger ):
             raise  # エラーを再度発生させて処理を終了
 
         # カーソルと接続を閉じる
-        cursor.close()
-        cnx.commit()  # トランザクションをコミットする
-        cnx.close()
         logger.info(f"処理が完了しました。SQLファイル: {insert_sql}")
 
     except Exception as e:
@@ -222,44 +201,4 @@ def Trading_History_insert_data( insert_sql,logger ):
         sys.exit(1)  # 修正: エラーが発生した場合にプログラムを終了する
     else:
         logger.info("処理が正常に終了しました。")
-
-# テーブルの削除を実行する。
-def drop_table(table_name, logger):
-    try:
-        logger.info("テーブルの削除処理を開始します。")
-
-        # MySQLに接続
-        cnx = DB_Common_Utils.get_mysql_connection()
-
-        # カーソルを取得
-        cursor = cnx.cursor()
-
-        # テーブルの存在を確認
-        if DB_CRE_00_Utils.check_table_existence(table_name, cursor, logger):
-
-            # テーブル削除のSQL文を生成
-            query = f"DROP TABLE {table_name}"
-
-            # SQLクエリを実行
-            logger.debug(query)
-            cursor.execute(query)
-
-            logger.info("テーブルの削除が完了しました。")
-        else:
-            logger.info("削除対象のテーブルは存在しません。")
-
-    except mysql.connector.Error as err:
-        logger.error("テーブルの削除に問題がありました。")
-        logger.error("エラーコード: %s", err.errno)
-        logger.error("エラーメッセージ: %s", err.msg)
-        logger.error("トレースバック情報: %s", traceback.format_exc())  # 修正: トレースバック情報をログに出力
-
-    finally:
-        # カーソルと接続を閉じる
-        if cursor:
-            cursor.close()
-        if cnx:
-            cnx.close()
-
-        logger.info("カーソルと接続を閉じました。")
 

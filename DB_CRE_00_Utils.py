@@ -62,14 +62,10 @@ def get_create_table_name_and_columns(create_query, logger):
         return None, None
 
 # テーブルを作成する関数 
-def create_table(create_statements, connection, logger ):
+def create_table(cursor,create_statements, logger ):
     try:
         logger.info("テーブルの生成を行います。")
         logger.debug(f"create_statements：{create_statements}")
-
-        # カーソルを取得
-        logger.info("カーソルの取得を行います。")
-        cursor = connection.cursor()
 
         # CREATE TABLE ステートメントの取得と実行
         logger.info("CREATE TABLE ステートメントの取得と実行を行います。")
@@ -94,10 +90,6 @@ def create_table(create_statements, connection, logger ):
             logger.debug(create_trigger_statement)
             cursor.execute(create_trigger_statement)
 
-        # カーソルを閉じる
-        logger.info("カーソルを閉じます。")
-        cursor.close()
-
         logger.info("テーブルが正しく生成されました。")
 
         # テーブルの作成が成功した場合はTrueを返す
@@ -111,16 +103,10 @@ def create_table(create_statements, connection, logger ):
 
 
 # テーブルの存在をチェックする関数
-def check_table_existence(table_name, connection, logger):
+def check_table_existence(cursor,table_name, logger):
     try:
         logger.info("テーブルの存在をチェックを開始します。")
         logger.debug(f"table_name：{table_name}")
-
-        # MySQLに接続
-        cnx = DB_Common_Utils.get_mysql_connection()
-
-        # カーソルを取得
-        cursor = cnx.cursor()
 
         # テーブルの存在をチェックするクエリ
         check_table_query = f"SHOW TABLES LIKE '{table_name}'"
@@ -132,10 +118,6 @@ def check_table_existence(table_name, connection, logger):
 
         exists = bool(cursor.fetchone())
 
-        # カーソルと接続を閉じる
-        cursor.close()
-        cnx.close()
-
         logger.debug(f"exists：{exists}")
         logger.info("テーブルの存在をチェックを終了します。")
         return exists
@@ -146,7 +128,47 @@ def check_table_existence(table_name, connection, logger):
         logger.error("エラーメッセージ: %s", err.msg)
         return False
 
-def process_sql_files(file_path, logger, flg=0):
+# テーブルの削除を実行する。
+def drop_table(cursor, table_name, logger):
+    try:
+        # テーブルの存在を確認
+        if check_table_existence(cursor, table_name, logger):
+            # テーブル削除のSQL文を生成
+            query = f"DROP TABLE {table_name}"
+
+            # SQLクエリを実行
+            logger.debug(query)
+            cursor.execute(query)
+
+            logger.info("テーブルの削除が完了しました。")
+        else:
+            logger.info("削除対象のテーブルは存在しません。")
+
+    except mysql.connector.Error as err:
+        logger.error("テーブルの削除に問題がありました。")
+        logger.error("エラーコード: %s", err.errno)
+        logger.error("エラーメッセージ: %s", err.msg)
+        logger.error("トレースバック情報: %s", traceback.format_exc())  # 修正: トレースバック情報をログに出力
+
+# テーブルのクリアを実行する。
+def clear_table(cursor, table_name, logger):
+    try:
+        query = f"DELETE FROM {table_name};"
+
+        # SQLクエリを実行
+        logger.debug(query)
+        cursor.execute(query)
+        cursor.connection.commit()
+
+        logger.info(f"テーブル '{table_name}' のデータをクリアしました。")
+
+    except mysql.connector.Error as err:
+        logger.error("テーブルのクリアに問題がありました。")
+        logger.error("エラーコード: %s", err.errno)
+        logger.error("エラーメッセージ: %s", err.msg)
+        logger.error("トレースバック情報: %s", traceback.format_exc())  # 修正: トレースバック情報をログに出力
+
+def process_sql_files(cursor,file_path, logger, flg=0):
     try:
         logger.debug("process_sql_filesを開始します")
 
@@ -162,9 +184,6 @@ def process_sql_files(file_path, logger, flg=0):
         logger.debug(f"directory_path：{directory_path}")
 
         sql_files = [line.strip() for line in lines[1:]]
-
-        # MySQL接続情報を取得
-        connection = DB_Common_Utils.get_mysql_connection()
 
         # 主処理
         # 定義ファイルに記載されているSQLファイル数だけCREATE処理実行
@@ -196,34 +215,59 @@ def process_sql_files(file_path, logger, flg=0):
             logger.debug(f"table_name：{table_name}")
 
             # フラグ「1」の場合、一時テーブルの作成を行う。
-            new_statements = None  # 初期値を設定
             if flg == 1:
-                logger.debug("フラグ「1」の為、一時テーブルの作成を行う。")
-
+                # 一時テーブルの作成を行う
                 current_date = datetime.now().strftime("%Y%m%d")
                 tmp_table_name = f"{table_name}_{current_date}"
                 logger.debug(f"tmp_table_name：{tmp_table_name}")
 
-                new_statements = create_statements[0].replace(table_name, tmp_table_name)
-                table_name = tmp_table_name
+                # 一時テーブルの存在チェック
+                if check_table_existence(cursor, tmp_table_name, logger):
+                    logger.info(f"一時テーブル '{tmp_table_name}' が既に存在します。削除します。")
+                    drop_table(cursor, tmp_table_name, logger)
 
-                logger.debug(f"create_statements：{create_statements}")
-                logger.debug(f"new_statements：{new_statements}")
+                # 一時テーブルを作成する
+                if create_table(cursor, create_statements[0].replace(table_name, tmp_table_name), logger):
+                    logger.info(f"一時テーブル '{tmp_table_name}' を作成しました。")
+                    table_name = tmp_table_name
+                else:
+                    logger.error(f"一時テーブル '{tmp_table_name}' の作成に失敗しました。")
 
-            # テーブルが既に存在する場合はスキップする
-            logger.debug("テーブル有無チェック")
-            if check_table_existence(table_name, connection, logger):
-                logger.info(f"テーブル '{table_name}' は既に存在します。スキップします。")
-                continue
-
-            # テーブルを作成する
-            logger.debug("テーブル作成")
-            if create_table(new_statements or create_statements[0], connection, logger):  # new_statementsがNoneの場合はcreate_statements[0]を使用
-                logger.info(f"テーブル '{table_name}' を作成しました。")
             else:
-                logger.error(f"テーブル '{table_name}' の作成に失敗しました。")
+                # テーブルの存在チェック
+                if check_table_existence(cursor,table_name, logger):
+                    logger.info(f"テーブル '{table_name}' が既に存在します。処理を選択してください。")
+                    choice = input("1. テーブルを削除して新規に作成\n2. テーブルのデータをクリア\n3. スキップしてCREATEを実行しない\n選択してください（1, 2, 3）: ")
+
+                    if choice == "1":
+                        # テーブルを削除して新規に作成する
+                        logger.info(f"テーブル '{table_name}' を削除します。")
+                        drop_table(cursor,table_name, logger)
+                        if create_table(cursor,create_statements[0], logger):
+                            logger.info(f"テーブル '{table_name}' を作成しました。")
+                        else:
+                            logger.error(f"テーブル '{table_name}' の作成に失敗しました。")
+                    elif choice == "2":
+                        # テーブルのデータをクリアする
+                        logger.info(f"テーブル '{table_name}' のデータをクリアします。")
+                        clear_table(cursor,table_name, logger)
+
+                    elif choice == "3":
+                        # スキップしてCREATEを実行しない
+                        logger.info(f"テーブル '{table_name}' のCREATEをスキップします。")
+                    else:
+                        logger.info("無効な選択です。スキップします。")
+                        continue
+
+                else:
+                    # テーブルを作成する
+                    if create_table(cursor,create_statements[0],logger):
+                        logger.info(f"テーブル '{table_name}' を作成しました。")
+                    else:
+                        logger.error(f"テーブル '{table_name}' の作成に失敗しました。")
 
         logger.info("処理が完了しました。")
+
         return table_name
 
     except Exception as e:

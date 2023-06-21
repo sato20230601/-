@@ -6,14 +6,17 @@ from configparser import ConfigParser
 import logging
 import mysql.connector
 
-# 定義用処理共通
-from DB_CRE_00_Utils import create_table, check_table_existence, read_create_statements, process_sql_files
+# 共通関数の読み込み
+import DB_Common_Utils
 
-# 登録更新処理共通
+# CREATE/DELETE 処理共通
+from DB_CRE_00_Utils import create_table, check_table_existence, read_create_statements, process_sql_files,drop_table,clear_table
+
+# INSERT/UPDATE 処理共通
 from DB_INS_00_Utils import generate_insert_sql
 
 # Trading_History用関数
-from DB_INS_07_2_Utils_Trading_History import Trading_History_insert_tmp_data,Trading_History_insert_data,drop_table
+from DB_INS_07_2_Utils_Trading_History import Trading_History_insert_tmp_data,Trading_History_insert_data
 
 # 主処理
 def main():
@@ -59,32 +62,54 @@ def main():
 
     # データ処理を実行
     try:
+
+        # MySQLに接続
+        cnx = DB_Common_Utils.get_mysql_connection()
+
+        # カーソルを取得
+        cursor = cnx.cursor()
+
         config_key = "Trading_History_csv_file_path"
 
-        # 1.一時テーブルの作成
+        # 1.一時テーブルの作成 
         Temp_file_path = r"C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-02_OBJ\01-7_CRE_Trading_History.txt"
         flg = 1
         logger.info("process_sql_filesを開始します。")
-        tmp_table_name = process_sql_files(Temp_file_path,logger,flg)
+        tmp_table_name = process_sql_files(cursor,Temp_file_path,logger,flg)
 
-        # 2.一時テーブルへのCSVの登録
+        # 2.一時テーブルへのCSVの登録 
         logger.info("Trading_History_process_dataを開始します。")
-        table_name,members =Trading_History_insert_tmp_data(file_path,config_key,tmp_table_name,logger)
+        table_name,members =Trading_History_insert_tmp_data(cursor, file_path,config_key,tmp_table_name,logger)
 
         # 3.重複しないデータを抽出し、主テーブルへの登録を行う。
         logger.info("generate_insert_sqlを開始します。")
         insert_sql = generate_insert_sql(tmp_table_name,table_name,members,logger)
 
         logger.info("Trading_History_process_dataを開始します。")
-        Trading_History_insert_data(insert_sql,logger)
+        Trading_History_insert_data(cursor, insert_sql,logger)
+        cnx.commit()  # トランザクションをコミットする
 
         # 4.一時テーブルの削除
         logger.info("一時テーブルの削除を開始します。")
-        drop_table(tmp_table_name, logger)
+        drop_table(cursor, tmp_table_name, logger)
         logger.info("一時テーブルの削除が完了しました。")
+
+        # カーソルと接続を閉じる
+        cursor.close()
+        cnx.commit()  # トランザクションをコミットする
+        cnx.close()
 
     except Exception as e:
         logger.exception("予期しないエラーが発生しました。")
+
+    finally:
+        # カーソルと接続を閉じる
+        if cursor:
+            cursor.close()
+        if cnx:
+            cnx.close()
+
+        logger.info("カーソルと接続を閉じました。")
 
     # 処理終了
     logger.info("処理が完了しました。")
