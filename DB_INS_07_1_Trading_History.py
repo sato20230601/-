@@ -5,6 +5,7 @@ from datetime import datetime
 from configparser import ConfigParser
 import logging
 import mysql.connector
+import shutil
 
 # 共通関数の読み込み
 import DB_Common_Utils
@@ -16,7 +17,7 @@ from DB_CRE_00_Utils import create_table, check_table_existence, read_create_sta
 from DB_INS_00_Utils import generate_insert_sql
 
 # Trading_History用関数
-from DB_INS_07_2_Utils_Trading_History import Trading_History_insert_tmp_data,Trading_History_insert_data
+from DB_INS_07_2_Utils_Trading_History import Trading_History_insert_tmp_data,Trading_History_insert_data,move_processed_csv
 
 # 主処理
 def main():
@@ -79,7 +80,7 @@ def main():
 
         # 2.一時テーブルへのCSVの登録 
         logger.info("Trading_History_process_dataを開始します。")
-        table_name,members =Trading_History_insert_tmp_data(cursor, file_path,config_key,tmp_table_name,logger)
+        table_name,members,csv_file_path =Trading_History_insert_tmp_data(cursor, file_path,config_key,tmp_table_name,logger)
 
         # 3.重複しないデータを抽出し、主テーブルへの登録を行う。
         logger.info("generate_insert_sqlを開始します。")
@@ -94,9 +95,12 @@ def main():
         drop_table(cursor, tmp_table_name, logger)
         logger.info("一時テーブルの削除が完了しました。")
 
+        # 5.取り込みの終わったCSVファイルのリネームを行う
+        logger.info("取り込みの終わったCSVファイルのリネームを行います。")
+        move_processed_csv(csv_file_path,logger)
+
         # カーソルと接続を閉じる
         cursor.close()
-        cnx.commit()  # トランザクションをコミットする
         cnx.close()
 
     except Exception as e:

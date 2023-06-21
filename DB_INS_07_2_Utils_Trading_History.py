@@ -1,5 +1,6 @@
 import os
 import csv
+import shutil
 from datetime import datetime, date, timedelta
 
 import logging
@@ -39,7 +40,7 @@ def Trading_History_insert_tmp_data(cursor, file_path, config_key ,tmp_table_nam
         # 「Trading_History_csv_file_path」のパスをconfigファイルより取得
         config_path = r"C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-03_SRC\config.txt"
         config = DB_Common_Utils.read_config_file(config_path)
-        Trading_History_csv_file_path = config.get('Trading_History_csv_file_path')
+        Trading_History_csv_file_path = config.get(config_key)
 
         # ループの外でエラーフラグを初期化
         has_error = False
@@ -152,7 +153,7 @@ def Trading_History_insert_tmp_data(cursor, file_path, config_key ,tmp_table_nam
                         logger.error("対象行番号:[%d]", row_index)  # 対象行番号をログに出力
                         raise  # エラーを再度発生させて処理を終了
 
-        return table_name, members
+        return table_name, members,Trading_History_csv_file_path
         logger.info(f"処理が完了しました。SQLファイル: {sql_file}")
 
     except Exception as e:
@@ -201,4 +202,31 @@ def Trading_History_insert_data( cursor,insert_sql,logger ):
         sys.exit(1)  # 修正: エラーが発生した場合にプログラムを終了する
     else:
         logger.info("処理が正常に終了しました。")
+
+def move_processed_csv(csv_file_path,logger):
+
+    # 開始ログを出力
+    logger.info("CSVファイルの移動処理を開始します。")
+    
+    # 引数の値をログに出力
+    logger.info(f"入力引数 csv_file_path: {csv_file_path}")
+    
+    # ファイルの存在するフォルダのパスを取得
+    csv_directory = os.path.dirname(csv_file_path)
+    
+    # 「取込済」フォルダのパスを作成
+    processed_directory = os.path.join(csv_directory, "取込済")
+    
+    # 「取込済」フォルダが存在しない場合は作成
+    os.makedirs(processed_directory, exist_ok=True)
+
+    # 移動先のファイルパスを作成
+    new_file_name = f"{os.path.basename(csv_file_path)}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    new_file_path = os.path.join(processed_directory, new_file_name)
+    
+    # ファイルの移動
+    shutil.move(csv_file_path, new_file_path)
+    
+    # 終了ログを出力
+    logger.info(f"CSVファイルを移動しました。移動先: {new_file_path}")
 
