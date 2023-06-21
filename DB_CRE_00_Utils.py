@@ -146,9 +146,9 @@ def check_table_existence(table_name, connection, logger):
         logger.error("エラーメッセージ: %s", err.msg)
         return False
 
-def process_sql_files(file_path, logger, flg):
+def process_sql_files(file_path, logger, flg=0):
     try:
-        logger.debug(f"process_sql_filesを開始します")
+        logger.debug("process_sql_filesを開始します")
 
         # ファイルからディレクトリパスとSQLファイル名を読み込む
         with open(file_path, 'r', encoding='utf-8') as file:
@@ -168,7 +168,7 @@ def process_sql_files(file_path, logger, flg):
 
         # 主処理
         # 定義ファイルに記載されているSQLファイル数だけCREATE処理実行
-
+        table_name = []
         for sql_file in sql_files:
             sql_file_path = os.path.join(directory_path, sql_file)
 
@@ -183,7 +183,7 @@ def process_sql_files(file_path, logger, flg):
 
             # create_statements の中身を改行を含めて表示
             create_statements_str = "\n".join(create_statements)
-            print(create_statements_str)
+            logger.debug(create_statements_str)
 
             logger.debug(f"create_statements[0]：{create_statements[0]}")
 
@@ -196,39 +196,37 @@ def process_sql_files(file_path, logger, flg):
             logger.debug(f"table_name：{table_name}")
 
             # フラグ「1」の場合、一時テーブルの作成を行う。
+            new_statements = None  # 初期値を設定
             if flg == 1:
-                logger.debug(f"フラグ「1」の為、一時テーブルの作成を行う。")
+                logger.debug("フラグ「1」の為、一時テーブルの作成を行う。")
 
                 current_date = datetime.now().strftime("%Y%m%d")
                 tmp_table_name = f"{table_name}_{current_date}"
                 logger.debug(f"tmp_table_name：{tmp_table_name}")
 
-                new_statements = create_statements[0].replace( table_name , tmp_table_name)
+                new_statements = create_statements[0].replace(table_name, tmp_table_name)
+                table_name = tmp_table_name
 
-            logger.debug(f"create_statements：{create_statements}")
-            logger.debug(f"new_statements：{new_statements}")
+                logger.debug(f"create_statements：{create_statements}")
+                logger.debug(f"new_statements：{new_statements}")
 
             # テーブルが既に存在する場合はスキップする
-            logger.debug(f"テーブル有無チェック")
-            if check_table_existence(tmp_table_name, connection, logger):
-                logger.info(f"テーブル '{tmp_table_name}' は既に存在します。スキップします。")
+            logger.debug("テーブル有無チェック")
+            if check_table_existence(table_name, connection, logger):
+                logger.info(f"テーブル '{table_name}' は既に存在します。スキップします。")
                 continue
 
             # テーブルを作成する
-            logger.debug(f"テーブル作成")
-            if create_table(new_statements, connection, logger):
-                logger.info(f"テーブル '{tmp_table_name}' を作成しました。")
+            logger.debug("テーブル作成")
+            if create_table(new_statements or create_statements[0], connection, logger):  # new_statementsがNoneの場合はcreate_statements[0]を使用
+                logger.info(f"テーブル '{table_name}' を作成しました。")
             else:
-                logger.error(f"テーブル '{tmp_table_name}' の作成に失敗しました。")
+                logger.error(f"テーブル '{table_name}' の作成に失敗しました。")
 
-        logger.info(f"処理が完了しました。SQLファイル: {sql_file}")
-
-
-        if flg == 1:
-            return tmp_table_name
-        else:
-            return table_name
+        logger.info("処理が完了しました。")
+        return table_name
 
     except Exception as e:
         logger.error("処理中にエラーが発生しました。")
         logger.error(str(e))
+
