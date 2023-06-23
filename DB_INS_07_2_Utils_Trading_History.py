@@ -1,5 +1,6 @@
 import os
 import csv
+import codecs
 import shutil
 from datetime import datetime, date, timedelta
 
@@ -24,10 +25,10 @@ import DB_INS_00_Utils
 # 共通関数の読み込み
 import DB_Common_Utils
 
-def Trading_History_insert_tmp_data(cursor, file_path, config_key ,tmp_table_name ,logger):
+def Trading_History_insert_tmp_data(cursor, file_path, Trading_History_csv_file_path ,tmp_table_name ,logger):
     try:
         # ファイルからディレクトリパスとSQLファイル名を読み込む
-        with open(file_path, 'r', encoding='utf-8') as file:
+        with open(file_path, 'r',  encoding='utf-8') as file:
             lines = file.readlines()
 
         if len(lines) < 2:
@@ -36,11 +37,6 @@ def Trading_History_insert_tmp_data(cursor, file_path, config_key ,tmp_table_nam
 
         directory_path = lines[0].strip()
         sql_files = [line.strip() for line in lines[1:]]
-
-        # 「Trading_History_csv_file_path」のパスをconfigファイルより取得
-        config_path = r"C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-03_SRC\config.txt"
-        config = DB_Common_Utils.read_config_file(config_path)
-        Trading_History_csv_file_path = config.get(config_key)
 
         # ループの外でエラーフラグを初期化
         has_error = False
@@ -60,8 +56,8 @@ def Trading_History_insert_tmp_data(cursor, file_path, config_key ,tmp_table_nam
             group_counts = defaultdict(int)
 
             # CSVファイルのデータをテーブルに登録
-            with open(Trading_History_csv_file_path, 'r', newline='', encoding='utf-8') as csvfile:
-                csv_reader = csv.reader(csvfile, delimiter=',', quotechar='"')
+            with codecs.open(Trading_History_csv_file_path, 'r', 'sjis', 'utf-8') as utf_file:
+                csv_reader = csv.reader(utf_file, delimiter=',', quotechar='"')
                 next(csv_reader)  # ヘッダー行をスキップする場合はコメントアウト
 
                 for row_index, row in enumerate(csv_reader, start=1):
@@ -78,6 +74,10 @@ def Trading_History_insert_tmp_data(cursor, file_path, config_key ,tmp_table_nam
                         # NULLまたは"-"の場合、Noneに変換する
                         value = None if value in ('', '-') else value
                         processed_row.append(value)
+
+                    # buy_sell_typeは売買以外の株式分割などがあった場合のイベントの際はNoneが設定されるので「売買以外」という文字列の設定を行う。
+                    if processed_row[6] == None:
+                        processed_row[6] = "売買以外"
 
                     # グループのキーを作成
                     group_key = (
