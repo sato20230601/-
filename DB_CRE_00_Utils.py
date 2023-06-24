@@ -236,6 +236,7 @@ def process_sql_files(cursor,file_path, logger, flg=0):
                 # テーブルの存在チェック
                 if check_table_existence(cursor,table_name, logger):
                     logger.info(f"テーブル '{table_name}' が既に存在します。処理を選択してください。")
+                    print(f"テーブル '{table_name}' が既に存在します。処理を選択してください。")
                     choice = input("1. テーブルを削除して新規に作成\n2. テーブルのデータをクリア\n3. スキップしてCREATEを実行しない\n選択してください（1, 2, 3）: ")
 
                     if choice == "1":

@@ -4,6 +4,9 @@ import logging
 from datetime import datetime
 from configparser import ConfigParser
 
+# 共通関数の読み込み
+import DB_Common_Utils
+
 # 関数用の定義ファイルをインクルード
 from DB_CRE_00_Utils import create_table, check_table_existence, read_create_statements, process_sql_files
 
@@ -46,10 +49,26 @@ def main():
         file_path = sys.argv[1]
 
     try:
-        process_sql_files(file_path, logger)
+
+        # MySQLに接続
+        cnx = DB_Common_Utils.get_mysql_connection()
+
+        # カーソルを取得
+        cursor = cnx.cursor()
+
+        process_sql_files(cursor,file_path, logger)
 
     except Exception as e:
         logger.exception("予期しないエラーが発生しました。")
+
+    finally:
+        # カーソルと接続を閉じる
+        if cursor:
+            cursor.close()
+        if cnx:
+            cnx.close()
+
+        logger.info("カーソルと接続を閉じました。")
 
     # 処理終了
     logger.info("処理が完了しました。")
