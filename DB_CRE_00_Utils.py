@@ -7,7 +7,7 @@ import DB_Common_Utils
 
 def read_create_statements(sql_file_path, logger):
     try:
-        logger.info("ファイルからクリエイト文を読み込みを行います。")
+        logger.debug("ファイルからクリエイト文を読み込みを行います。")
 
         with open(sql_file_path, 'r', encoding='utf-8') as file:
             content = file.read()
@@ -21,7 +21,7 @@ def read_create_statements(sql_file_path, logger):
             new_statements = create_statements[0].replace( table_name , table_name_aft)
             logger.debug(f"new_statements：{new_statements}")
 
-            logger.info("ファイルからクリエイト文を読み込みを終了します。")
+            logger.debug("ファイルからクリエイト文を読み込みを終了します。")
         return create_statements
     except FileNotFoundError:
         logger.error(f"ファイルが存在しません: {sql_file_path}")
@@ -29,7 +29,7 @@ def read_create_statements(sql_file_path, logger):
 
 def get_create_table_name_and_columns(create_query, logger):
     try:
-        logger.info("SQLファイルからテーブル名、カラムの取得を行います。")
+        logger.debug("SQLファイルからテーブル名、カラムの取得を行います。")
         logger.debug(f"create_query：{create_query}")
 
         create_query = create_query[0]  # リストから文字列を取り出す
@@ -51,12 +51,12 @@ def get_create_table_name_and_columns(create_query, logger):
 
         logger.debug(f"columns：{columns}")
 
-        logger.info("SQLファイルからテーブル名、カラムの取得を行いました。")
+        logger.debug("SQLファイルからテーブル名、カラムの取得を行いました。")
 
         return table_name, columns
 
     except ValueError:
-        logger.info("SQLファイルからテーブル名、カラムの取得に失敗しました")
+        logger.debug("SQLファイルからテーブル名、カラムの取得に失敗しました")
 
         # クエリの解析に失敗した場合のエラーハンドリング
         return None, None
@@ -64,11 +64,11 @@ def get_create_table_name_and_columns(create_query, logger):
 # テーブルを作成する関数 
 def create_table(cursor,create_statements, logger ):
     try:
-        logger.info("テーブルの生成を行います。")
+        logger.debug("テーブルの生成を行います。")
         logger.debug(f"create_statements：{create_statements}")
 
         # CREATE TABLE ステートメントの取得と実行
-        logger.info("CREATE TABLE ステートメントの取得と実行を行います。")
+        logger.debug("CREATE TABLE ステートメントの取得と実行を行います。")
         create_table_start = create_statements.index('CREATE TABLE')
         create_table_end = len(create_statements)
         if 'COMMENT' in create_statements:
@@ -76,7 +76,7 @@ def create_table(cursor,create_statements, logger ):
         create_table_statement = create_statements[create_table_start:create_table_end+1]
 
         # テーブル作成処理の実行
-        logger.info("テーブル作成処理の実行を行います。")
+        logger.debug("テーブル作成処理の実行を行います。")
         logger.debug(create_table_statement)
         cursor.execute(create_table_statement)
 
@@ -90,7 +90,7 @@ def create_table(cursor,create_statements, logger ):
             logger.debug(create_trigger_statement)
             cursor.execute(create_trigger_statement)
 
-        logger.info("テーブルが正しく生成されました。")
+        logger.debug("テーブルが正しく生成されました。")
 
         # テーブルの作成が成功した場合はTrueを返す
         return True
@@ -105,7 +105,7 @@ def create_table(cursor,create_statements, logger ):
 # テーブルの存在をチェックする関数
 def check_table_existence(cursor,table_name, logger):
     try:
-        logger.info("テーブルの存在をチェックを開始します。")
+        logger.debug("テーブルの存在をチェックを開始します。")
         logger.debug(f"table_name：{table_name}")
 
         # テーブルの存在をチェックするクエリ
@@ -119,7 +119,7 @@ def check_table_existence(cursor,table_name, logger):
         exists = bool(cursor.fetchone())
 
         logger.debug(f"exists：{exists}")
-        logger.info("テーブルの存在をチェックを終了します。")
+        logger.debug("テーブルの存在をチェックを終了します。")
         return exists
 
     except mysql.connector.Error as err:
@@ -140,9 +140,9 @@ def drop_table(cursor, table_name, logger):
             logger.debug(query)
             cursor.execute(query)
 
-            logger.info("テーブルの削除が完了しました。")
+            logger.debug("テーブルの削除が完了しました。")
         else:
-            logger.info("削除対象のテーブルは存在しません。")
+            logger.debug("削除対象のテーブルは存在しません。")
 
     except mysql.connector.Error as err:
         logger.error("テーブルの削除に問題がありました。")
@@ -217,8 +217,7 @@ def process_sql_files(cursor,file_path, logger, flg=0):
             # フラグ「1」の場合、一時テーブルの作成を行う。
             if flg == 1:
                 # 一時テーブルの作成を行う
-                current_date = datetime.now().strftime("%Y%m%d")
-                tmp_table_name = f"{table_name}_{current_date}"
+                tmp_table_name = f"TMP_{table_name}"
                 logger.debug(f"tmp_table_name：{tmp_table_name}")
 
                 # 一時テーブルの存在チェック

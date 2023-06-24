@@ -48,11 +48,8 @@ def get_recent_data(cursor,table_name,logger):
 
     # 直近の「取得年月日」とティッカーシンボルを取得するSQL文
     query = """
-    SELECT MAX(`Date_YYYYMMDD`), `Symbol`
-    FROM %s
-    GROUP BY `Symbol`
+    SELECT `Date_YYYYMMDD`, `Symbol` FROM %s
     """
-
     query = query % table_name
 
     # SQL文を実行
@@ -70,43 +67,34 @@ def get_recent_data(cursor,table_name,logger):
 
 # CSVのデータとDBの直近のデータの比較を行い、差分があれば差分チェックテーブルに登録を行いTRUEを返す。
 # なければFALSEを返す。
-
-def check_diff(cursor, table_name, csv_data, recent_data, logger=None):
-
-    # ログ出力: 開始メッセージと入力引数の値
+def check_diff(cursor, table_name, csv_data, csv_no, recent_data, recent_no, logger=None):
     if logger:
         logger.info(f"--- 関数 check_diff 開始 ---")
         logger.info(f"table_name: {table_name}")
         logger.info(f"csv_data: {csv_data}")
         logger.info(f"recent_data: {recent_data}")
 
-    # CSVデータが空の場合はFalseを返す
     if not csv_data:
         if logger:
             logger.info("--- 関数 check_diff 終了 FALSE ---")
             logger.info("CSVデータが空です。処理をスキップします。")
         return False
 
-    # DBの直近データが空の場合はTrueを返す
     if not recent_data:
         if logger:
             logger.info("--- 関数 check_diff 終了 TRUE ---")
             logger.info("DBの直近データが空です。処理をスキップし、csv_dataの内容をテーブルに登録します。")
         return True
 
-    # 差分があるかどうかを判定するフラグ
     diff_flag = False
+    csv_symbols = [row[csv_no] for row in csv_data]
+    recent_symbols = [row[recent_no] for row in recent_data]
+    execution_date = datetime.now().strftime("%Y-%m-%d")
 
-    # CSVデータのティッカーシンボルを取得
-    csv_symbols = [row[1] for row in csv_data]
+    if logger:
+        logger.info(f"csv_symbols: {csv_symbols}")
+        logger.info(f"recent_symbols: {recent_symbols}")
 
-    # DBの直近のデータのティッカーシンボルを取得
-    recent_symbols = [row[1] for row in recent_data]
-
-    # 実行日付を取得
-    execution_date = date.today()
-
-    # CSVデータに存在し、DBの直近のデータに存在しないティッカーシンボルを検出し、差分チェック用テーブルに登録
     for symbol in csv_symbols:
         if symbol not in recent_symbols:
             diff_flag = True
@@ -117,12 +105,8 @@ def check_diff(cursor, table_name, csv_data, recent_data, logger=None):
             """
             insert_query = insert_query.format(table_name=table_name)
             insert_values = (execution_date, symbol, datetime.now())
-            insert_statement = insert_query % insert_values
-            logger.info(insert_statement)
-
             cursor.execute(insert_query, insert_values)
 
-    # DBの直近のデータに存在し、CSVデータに存在しないティッカーシンボルを検出し、差分チェック用テーブルに登録
     for symbol in recent_symbols:
         if symbol not in csv_symbols:
             diff_flag = True
@@ -133,12 +117,8 @@ def check_diff(cursor, table_name, csv_data, recent_data, logger=None):
             """
             insert_query = insert_query.format(table_name=table_name)
             insert_values = (execution_date, symbol, datetime.now())
-            insert_statement = insert_query % insert_values
-            logger.info(insert_statement)
-
             cursor.execute(insert_query, insert_values)
 
-    # ログ出力: 出力結果と戻り値
     if logger:
         logger.info(f"--- 関数 check_diff 終了 ---")
         logger.info(f"diff_flag: {diff_flag}")

@@ -39,7 +39,7 @@ def sp500_process_data(file_path, config_key, logger):
 
         response = requests.get(sp500_url)
         soup = BeautifulSoup(response.text, 'html.parser')
-	
+
         # テーブルの要素を取得
         table = soup.find('table', {'class': 'wikitable sortable'})
 
@@ -80,13 +80,18 @@ def sp500_process_data(file_path, config_key, logger):
             logger.debug(additional_statement)
 
             sp500_data = DB_INS_00_Utils.get_recent_data(cursor,table_name,logger)
-
             csv_data = DB_INS_00_Utils.read_csv_data(sp500_csv_file_path)
 
-            if DB_INS_00_Utils.check_diff(cursor,"sp500_diff_record",csv_data, sp500_data,logger):
+            csv_no = 0
+            sp500_no = 1
+            if DB_INS_00_Utils.check_diff(cursor,"sp500_diff_record",csv_data, csv_no, sp500_data, sp500_no,logger):
+
+                # テーブルのデータを全て削除
+                delete_query = "DELETE FROM sp500"
+                cursor.execute(delete_query)
+                cnx.commit()
 
                 # TRUEの場合差分があるので登録を行う。
-
                 for row_index, row in enumerate(csv_data, start=1):
 
                     # 空白を除外してデータを整形
@@ -141,7 +146,7 @@ def sp500_process_data(file_path, config_key, logger):
                     insert_query += additional_statement
 
                     insert_values.append(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))  # INS_DATEの値を追加
-                    insert_values.append(None)  # UPT_DATEの値を追加
+                    insert_values.append(None)  # UPD_DATEの値を追加
 
                     # SQL文を表示またはログファイルに書き込み
                     logger.debug("実行するSQL文:")
@@ -156,7 +161,7 @@ def sp500_process_data(file_path, config_key, logger):
                         logger.error("INSERT文の実行中にエラーが発生しました:", error)
                         logger.error("対象行番号:[%d]", row_index)  # 対象行番号をログに出力
                         raise  # エラーを再度発生させて処理を終了
-     
+
             else:
                 logger.info("データに差分はありませんでした。スキップします。")
 
@@ -176,3 +181,4 @@ def sp500_process_data(file_path, config_key, logger):
     if has_error:
         logger.error("エラーが発生したため、処理を終了します。")
         return
+
