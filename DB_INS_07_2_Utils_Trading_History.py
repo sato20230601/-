@@ -27,6 +27,7 @@ import DB_Common_Utils
 
 def Trading_History_insert_tmp_data(cursor, file_path, Trading_History_csv_file_path ,tmp_table_name ,logger):
     try:
+        logger.info(f"関数 Trading_History_insert_tmp_data の実行開始。入力引数: cursor={cursor}, file_path={file_path}, Trading_History_csv_file_path={Trading_History_csv_file_path}, tmp_table_name={tmp_table_name}")
         # ファイルからディレクトリパスとSQLファイル名を読み込む
         with open(file_path, 'r',  encoding='utf-8') as file:
             lines = file.readlines()
@@ -62,6 +63,8 @@ def Trading_History_insert_tmp_data(cursor, file_path, Trading_History_csv_file_
 
                 for row_index, row in enumerate(csv_reader, start=1):
 
+                    logger.debug(f"row_index:row:{row_index}:{row}")
+
                     # 毎回初期化を行う。
                     csv_data = {}
 
@@ -78,6 +81,8 @@ def Trading_History_insert_tmp_data(cursor, file_path, Trading_History_csv_file_
                     # buy_sell_typeは売買以外の株式分割などがあった場合のイベントの際はNoneが設定されるので「売買以外」という文字列の設定を行う。
                     if processed_row[6] == None:
                         processed_row[6] = "売買以外"
+
+                    logger.debug(f"processed_row: {processed_row}")
 
                     # グループのキーを作成
                     group_key = (
@@ -97,13 +102,16 @@ def Trading_History_insert_tmp_data(cursor, file_path, Trading_History_csv_file_
                     group_counts[group_key] = csv_data['No']
 
                     # Trading_Historyのカラムに合わせてデータの作成を行う。
-                    csv_data['trade_date'] = processed_row[0]
-                    csv_data['settlement_date'] = processed_row[1]
-                    csv_data['ticker'] = processed_row[2]
-                    csv_data['buy_sell_type'] = processed_row[6]
-                    csv_data['security_name'] = processed_row[3]
-                    csv_data['account'] = processed_row[4]
-                    csv_data['transaction_type'] = processed_row[5]
+                    # 例 processed_row: [0]:'2021/8/19',[1]:'2021/8/24', [2]:'TLT', [3]:'ISHARES 20YR TR', [4]:'特定',[5]:'買付',
+                    #                   [6]:'円',[7]:'2',[8]:'150.2900', [9]:'300.58', [10]:'110.06', [11]:'1.35',[12]:'0.13',[13]:None,[14]:'33577.00']
+
+                    csv_data['trade_date'] = processed_row[0]         # [0]:'2021/8/19'
+                    csv_data['settlement_date'] = processed_row[1]    # [1]:'2021/8/24'
+                    csv_data['ticker'] = processed_row[2]             # [2]:'TLT'
+                    csv_data['buy_sell_type'] = processed_row[6]      # [6]:'円'
+                    csv_data['security_name'] = processed_row[3]      # [3]:'ISHARES 20YR TR'
+                    csv_data['account'] = processed_row[4]            # [4]:'特定'
+                    csv_data['transaction_type'] = processed_row[5]   # [5]:'買付'
                     csv_data['credit_type'] = processed_row[7]
                     csv_data['settlement_deadline'] = processed_row[8]
                     csv_data['settlement_currency'] = processed_row[9]
@@ -151,23 +159,27 @@ def Trading_History_insert_tmp_data(cursor, file_path, Trading_History_csv_file_
                     except mysql.connector.Error as error:
                         logger.error("INSERT文の実行中にエラーが発生しました:", error)
                         logger.error("対象行番号:[%d]", row_index)  # 対象行番号をログに出力
+                        logger.error("処理中のファイル名:[%s]", Trading_History_csv_file_path)  # 処理中のファイル名をログに出力
                         raise  # エラーを再度発生させて処理を終了
 
-        return table_name, members,Trading_History_csv_file_path
         logger.info(f"処理が完了しました。SQLファイル: {sql_file}")
+        return table_name, members,Trading_History_csv_file_path
 
     except Exception as e:
         logger.error("処理中にエラーが発生しました。")
         logger.error(str(e))
         logger.error(traceback.format_exc())  # 修正: トレースバック情報をログに出力
         has_error = True  # エラーフラグを設定
+        raise  # エラーを再度発生させて処理を終了
+
+    finally:
+        logger.info("関数 Trading_History_insert_tmp_data の実行終了。")
+        logger.info("処理中のファイル名:[%s]", Trading_History_csv_file_path)  # 処理中のファイル名をログに出力
 
     # エラーフラグをチェックして処理を終了
     if has_error:
         logger.error("エラーが発生したため、処理を終了します。")
         sys.exit(1)  # 修正: エラーが発生した場合にプログラムを終了する
-    else:
-        logger.info("処理が正常に終了しました。")
 
 def Trading_History_insert_data( cursor,insert_sql,logger ):
     try:
@@ -203,7 +215,7 @@ def Trading_History_insert_data( cursor,insert_sql,logger ):
     else:
         logger.info("処理が正常に終了しました。")
 
-def move_processed_csv(csv_file_path,logger):
+def move_processed_csv(csv_file_path,folder_name,logger):
 
     # 開始ログを出力
     logger.info("CSVファイルの移動処理を開始します。")
@@ -215,7 +227,7 @@ def move_processed_csv(csv_file_path,logger):
     csv_directory = os.path.dirname(csv_file_path)
     
     # 「取込済」フォルダのパスを作成
-    processed_directory = os.path.join(csv_directory, "取込済")
+    processed_directory = os.path.join(csv_directory, folder_name)
     
     # 「取込済」フォルダが存在しない場合は作成
     os.makedirs(processed_directory, exist_ok=True)
@@ -230,3 +242,15 @@ def move_processed_csv(csv_file_path,logger):
     # 終了ログを出力
     logger.info(f"CSVファイルを移動しました。移動先: {new_file_path}")
 
+def check_csv_header(csv_file_path, expected_headers, logger):
+    logger.info(f"CSVファイルのヘッダーをチェックします。ファイルパス: {csv_file_path}")
+    with open(csv_file_path, 'r') as file:
+        csv_reader = csv.reader(file)
+        headers = next(csv_reader)
+        if len(headers) != len(expected_headers) or set(headers) != set(expected_headers):
+            logger.error(f"CSVファイルのヘッダーが不正です。")
+            logger.info(f"期待するヘッダー: {expected_headers}")
+            logger.info(f"実際のヘッダー: {headers}")
+            return False  # ヘッダー不一致のステータスを返す
+    logger.info("CSVファイルのヘッダーが正常です。")
+    return True  # OKのステータスを返す

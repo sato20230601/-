@@ -6,6 +6,7 @@ from configparser import ConfigParser
 import logging
 import mysql.connector
 import shutil
+import glob
 
 # 共通関数の読み込み
 import DB_Common_Utils
@@ -17,7 +18,7 @@ from DB_CRE_00_Utils import create_table, check_table_existence, read_create_sta
 from DB_INS_00_Utils import generate_insert_sql
 
 # Trading_History用関数
-from DB_INS_07_2_Utils_Trading_History import Trading_History_insert_tmp_data,Trading_History_insert_data,move_processed_csv
+from DB_INS_07_2_Utils_Trading_History import Trading_History_insert_tmp_data,Trading_History_insert_data,move_processed_csv,check_csv_header
 
 # 主処理
 def main():
@@ -70,34 +71,68 @@ def main():
         # カーソルを取得
         cursor = cnx.cursor()
 
-        config_key = "Trading_History_csv_file_path"
+        # 「Trading_History_csv_file_path」のパスをconfigファイルより取得
+        config_path = r"C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-03_SRC\config.txt"
+        config_key_DF = "DownloadFolder"
+        config_key_TH = "Trading_History_csv_dir_path"
 
-        # 1.一時テーブルの作成 
-        Temp_file_path = r"C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-02_OBJ\01-7_CRE_Trading_History.txt"
-        flg = 1
-        logger.info("process_sql_filesを開始します。")
-        tmp_table_name = process_sql_files(cursor,Temp_file_path,logger,flg)
+        config = DB_Common_Utils.read_config_file(config_path)
+        download_folder = config.get(config_key_DF)
+        Trading_History_csv_dir_path = config.get(config_key_TH)
 
-        # 2.一時テーブルへのCSVの登録 
-        logger.info("Trading_History_process_dataを開始します。")
-        table_name,members,csv_file_path =Trading_History_insert_tmp_data(cursor, file_path,config_key,tmp_table_name,logger)
+        # ファイルの検索パターン
+        search_pattern = os.path.join(download_folder, '*tradehistory(US)*.csv')
 
-        # 3.重複しないデータを抽出し、主テーブルへの登録を行う。
-        logger.info("generate_insert_sqlを開始します。")
-        insert_sql = generate_insert_sql(tmp_table_name,table_name,members,logger)
+        # 検索パターンにマッチするファイルを取得
+        download_files = glob.glob(search_pattern)
 
-        logger.info("Trading_History_process_dataを開始します。")
-        Trading_History_insert_data(cursor, insert_sql,logger)
-        cnx.commit()  # トランザクションをコミットする
+        # CSVファイルを取り込むフォルダに移動
+        for download_file in download_files:
+            destination_path = os.path.join(Trading_History_csv_dir_path, os.path.basename(file))
+            shutil.move(download_file, destination_path)
 
-        # 4.一時テーブルの削除
-        logger.info("一時テーブルの削除を開始します。")
-        drop_table(cursor, tmp_table_name, logger)
-        logger.info("一時テーブルの削除が完了しました。")
+        csv_file_paths = glob.glob(os.path.join(Trading_History_csv_dir_path, "*.csv"))
+        for csv_file in csv_file_paths:
 
-        # 5.取り込みの終わったCSVファイルのリネームを行う
-        logger.info("取り込みの終わったCSVファイルのリネームを行います。")
-        move_processed_csv(csv_file_path,logger)
+            logger.info(f"処理中のCSVファイル名: {csv_file}")
+
+            # 0.CSVファイルデータ項目と数の整合性チェック
+            expected_headers = ['約定日', '受渡日', 'ティッカー', '銘柄名', '口座', '取引区分', '売買区分', '信用区分', '弁済期限', '決済通貨', '数量［株］', '単価［USドル］', '約定代金［USドル］', '為替レート', '手数料［USドル］', '税金［USドル］', '受渡金額［USドル］', '受渡金額［円］']
+            if not check_csv_header(csv_file, expected_headers,logger):
+
+                folder_name = "データ不正CSV"
+                move_processed_csv(csv_file,folder_name,logger)
+                logger.warning(f"{csv_file}のヘッダーが一致しません。{folder_name}に不正CSVファイルを移動し、スキップします。")
+
+                continue  # スキップする
+
+            # 1.一時テーブルの作成 
+            Temp_file_path = r"C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-02_OBJ\01-7_CRE_Trading_History.txt"
+            flg = 1
+            logger.info("process_sql_filesを開始します。")
+            tmp_table_name = process_sql_files(cursor,Temp_file_path,logger,flg)
+
+            # 2.一時テーブルへのCSVの登録 
+            logger.info("Trading_History_process_dataを開始します。")
+            table_name,members,csv_file_path =Trading_History_insert_tmp_data(cursor, file_path,csv_file,tmp_table_name,logger)
+
+            # 3.重複しないデータを抽出し、主テーブルへの登録を行う。
+            logger.info("generate_insert_sqlを開始します。")
+            insert_sql = generate_insert_sql(tmp_table_name,table_name,members,logger)
+
+            logger.info("Trading_History_process_dataを開始します。")
+            Trading_History_insert_data(cursor, insert_sql,logger)
+            cnx.commit()  # トランザクションをコミットする
+
+            # 4.一時テーブルの削除
+            logger.info("一時テーブルの削除を開始します。")
+            drop_table(cursor, tmp_table_name, logger)
+            logger.info("一時テーブルの削除が完了しました。")
+
+            # 5.取り込みの終わったCSVファイルのリネームを行う
+            logger.info("取り込みの終わったCSVファイルのリネームを行います。")
+            folder_name = "取込済"
+            move_processed_csv(csv_file_path,folder_name,logger)
 
         # カーソルと接続を閉じる
         cursor.close()
