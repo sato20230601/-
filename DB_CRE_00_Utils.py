@@ -1,3 +1,26 @@
+"""
+ユーティリティ関数: DB_CRE_00_Utils.py
+
+このスクリプトは、データベースのテーブル作成と関連する処理をサポートするユーティリティ関数を提供します。
+以下の機能が含まれています:
+- SQLファイルからクリエイト文を読み込み
+- クリエイト文からテーブル名とカラムを取得
+- テーブルの生成、存在チェック、削除、データのクリアを実行
+
+注意事項:
+- このスクリプトは、MySQLデータベースを操作するためのユーティリティ関数です。
+- MySQL Connector/Pythonライブラリが必要です。事前にインストールしておいてください。
+- このスクリプトを使用する前に、データベースの接続設定を適切に構成してください。
+
+提供される関数:
+- read_create_statements: SQLファイルからクリエイト文を読み込む関数
+- get_create_table_name_and_columns: クリエイト文からテーブル名とカラムを取得する関数
+- create_table: テーブルを生成する関数
+- check_table_existence: テーブルの存在をチェックする関数
+- drop_table: テーブルの削除を実行する関数
+- clear_table: テーブルのデータをクリアする関数
+- process_sql_files: SQLファイルの処理を実行する関数
+"""
 import os
 import mysql.connector
 from configparser import ConfigParser
@@ -5,6 +28,12 @@ import logging
 from datetime import datetime
 import DB_Common_Utils
 
+# 指定したSQLファイルからクリエイト文を読み込み、文をセミコロンで区切ってリストとして返す関数
+# Parameters:
+#     sql_file_path (str): SQLファイルのパス
+#     logger (Logger): ロガーオブジェクト
+# Returns:
+#     list: クリエイト文を格納したリスト
 def read_create_statements(sql_file_path, logger):
     try:
         logger.debug("ファイルからクリエイト文を読み込みを行います。")
@@ -27,6 +56,12 @@ def read_create_statements(sql_file_path, logger):
         logger.error(f"ファイルが存在しません: {sql_file_path}")
         return ""
 
+# クリエイト文からテーブル名とカラムを取得する関数
+# Parameters:
+#     create_query (list): クリエイト文のリスト
+#     logger (Logger): ロガーオブジェクト
+# Returns:
+#     tuple: テーブル名とカラムを格納したタプル
 def get_create_table_name_and_columns(create_query, logger):
     try:
         logger.debug("SQLファイルからテーブル名、カラムの取得を行います。")
@@ -61,7 +96,14 @@ def get_create_table_name_and_columns(create_query, logger):
         # クエリの解析に失敗した場合のエラーハンドリング
         return None, None
 
-# テーブルを作成する関数 
+# テーブルを生成する関数
+# Parameters:
+#     cursor (Cursor): データベースカーソル
+#     create_statements (list): クリエイト文のリスト
+#     logger (Logger): ロガーオブジェクト
+# Returns:
+#     bool: テーブルの生成が成功したかどうか
+
 def create_table(cursor,create_statements, logger ):
     try:
         logger.debug("テーブルの生成を行います。")
@@ -101,8 +143,13 @@ def create_table(cursor,create_statements, logger ):
         logger.error("エラーメッセージ: %s", err.msg)
         return False
 
-
 # テーブルの存在をチェックする関数
+# Parameters:
+#     cursor (Cursor): データベースカーソル
+#     table_name (str): テーブル名
+#     logger (Logger): ロガーオブジェクト
+# Returns:
+#     bool: テーブルの存在の有無
 def check_table_existence(cursor,table_name, logger):
     try:
         logger.debug("テーブルの存在をチェックを開始します。")
@@ -128,7 +175,14 @@ def check_table_existence(cursor,table_name, logger):
         logger.error("エラーメッセージ: %s", err.msg)
         return False
 
-# テーブルの削除を実行する。
+# テーブルの削除を実行する関数
+# Parameters:
+#     cursor (Cursor): データベースカーソル
+#     table_name (str): テーブル名
+#     logger (Logger): ロガーオブジェクト
+# Returns:
+#     None
+
 def drop_table(cursor, table_name, logger):
     try:
         # テーブルの存在を確認
@@ -150,7 +204,13 @@ def drop_table(cursor, table_name, logger):
         logger.error("エラーメッセージ: %s", err.msg)
         logger.error("トレースバック情報: %s", traceback.format_exc())  # 修正: トレースバック情報をログに出力
 
-# テーブルのクリアを実行する。
+# テーブルのクリアを実行する関数
+# Parameters:
+#     cursor (Cursor): データベースカーソル
+#     table_name (str): テーブル名
+#     logger (Logger): ロガーオブジェクト
+# Returns:
+#     None
 def clear_table(cursor, table_name, logger):
     try:
         query = f"DELETE FROM {table_name};"
@@ -168,6 +228,14 @@ def clear_table(cursor, table_name, logger):
         logger.error("エラーメッセージ: %s", err.msg)
         logger.error("トレースバック情報: %s", traceback.format_exc())  # 修正: トレースバック情報をログに出力
 
+# SQLファイルを処理する関数
+# Parameters:
+#     cursor (Cursor): データベースカーソル
+#     file_path (str): ファイルパス
+#     logger (Logger): ロガーオブジェクト
+#     flg (int): フラグ (デフォルト値: 0)
+# Returns:
+#     str: テーブル名
 def process_sql_files(cursor,file_path, logger, flg=0):
     try:
         logger.debug("process_sql_filesを開始します")

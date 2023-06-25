@@ -15,21 +15,27 @@ def main():
     # ロギングの設定
     # 一般的なログレベルの階層 CRITICAL > ERROR > WARNING > INFO > DEBUG
 
+    # ログファイルの保存ディレクトリを指定します
     log_directory = r"C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-03_SRC\LOG"
     os.makedirs(log_directory, exist_ok=True)
+    
+    # ログファイルのパスを作成します
     log_file = os.path.join(log_directory, f"log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
 
+    # ロガーを初期化します
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
 
+    # ログのフォーマットを指定します
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 
+    # ファイルハンドラを作成してログファイルにログを出力します
     file_handler = logging.FileHandler(log_file)
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
 
-    # コンソール設定
+    # コンソールハンドラを作成してログをコンソールに出力します
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.WARN)
     console_handler.setFormatter(formatter)
@@ -56,6 +62,7 @@ def main():
         # カーソルを取得
         cursor = cnx.cursor()
 
+        # SQLファイルの処理を実行します
         process_sql_files(cursor,file_path, logger)
 
     except Exception as e:

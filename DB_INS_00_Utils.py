@@ -15,7 +15,16 @@ from bs4 import BeautifulSoup
 # import DB_Common_Utils
 import DB_Common_Utils
 
+#
+# CSVファイルからデータを読み込み、リストとして返す関数
+#     Parameters:
+#       csv_file_path (str): CSVファイルのパス
+#       logger (Logger): ロガーオブジェクト（デフォルトはNone）
+#     Returns:
+#        list: CSVデータを格納したリスト
+#
 def read_csv_data(csv_file_path, logger=None):
+
     csv_data = []
 
     with open(csv_file_path, 'r', encoding='utf-8') as csvfile:
@@ -39,6 +48,15 @@ def read_csv_data(csv_file_path, logger=None):
 
     return csv_data
 
+#
+# データベースから直近の「取得年月日」とティッカーシンボルを取得する関数
+# Parameters:
+#     cursor (Cursor): データベースカーソルオブジェクト
+#     table_name (str): テーブル名
+#     logger (Logger): ロガーオブジェクト
+# Returns:
+#     list: 直近の「取得年月日」とティッカーシンボルを格納したリスト
+#
 def get_recent_data(cursor,table_name,logger):
 
     # ログ出力: 開始メッセージと入力変数
@@ -64,9 +82,21 @@ def get_recent_data(cursor,table_name,logger):
 #        logger.info(f"戻り値: {result}")
 
     return result
+"""
+CSVデータとDBの直近のデータの差分をチェックし、差分があれば差分チェックテーブルに登録し、Trueを返す関数
 
-# CSVのデータとDBの直近のデータの比較を行い、差分があれば差分チェックテーブルに登録を行いTRUEを返す。
-# なければFALSEを返す。
+Parameters:
+    cursor (Cursor): データベースカーソルオブジェクト
+    table_name (str): テーブル名
+    csv_data (list): CSVデータを格納したリスト
+    csv_no (int): CSVデータのシンボルのインデックス
+    recent_data (list): 直近のデータを格納したリスト
+    recent_no (int): 直近のデータのシンボルのインデックス
+    logger (Logger): ロガーオブジェクト（デフォルトはNone）
+
+Returns:
+    bool: 差分がある場合はTrue、差分がない場合はFalse
+"""
 def check_diff(cursor, table_name, csv_data, csv_no, recent_data, recent_no, logger=None):
     if logger:
         logger.info(f"--- 関数 check_diff 開始 ---")
@@ -125,7 +155,15 @@ def check_diff(cursor, table_name, csv_data, csv_no, recent_data, recent_no, log
 
     return diff_flag
 
-# SQLファイル(INSERT文)読み込み、テーブル名、カラム名、条件部分(ON句以降)を取得する。
+"""
+SQLファイルからテーブル名とメンバーを取得する関数
+
+Parameters:
+    sql_file_path (str): SQLファイルのパス
+
+Returns:
+    tuple: テーブル名とメンバーのリスト、追加のステートメント
+"""
 def get_table_name_and_members(sql_file_path):
     try:
         with open(sql_file_path, 'r') as file:
@@ -149,7 +187,16 @@ def get_table_name_and_members(sql_file_path):
     except FileNotFoundError:
         logger.error(f"ファイルが存在しません: {sql_file_path}")
         return ""
+"""
+テーブルにデータを挿入する関数
 
+Parameters:
+    cursor (Cursor): データベースカーソルオブジェクト
+    table_name (str): テーブル名
+    columns (list): カラム名のリスト
+    values (list): 挿入するデータのリスト
+    logger (Logger): ロガーオブジェクト
+"""
 def insert_data_into_table(cursor, table_name, columns, values, logger):
 
     # ログ出力: 開始メッセージと入力変数
@@ -180,9 +227,18 @@ def update_data_in_table(cursor, table_name, update_columns, values, condition_c
     # データを更新
     DB_Common_Utils.execute_sql_query(cursor, update_query, values + condition_values, logger)
 
-# 重複しないレコードの登録用INSERT文の作成
-# 呼び出し元関数
-# DB_CRE_07_Trading_History
+"""
+一時テーブルから実テーブルへのINSERT文を生成する関数
+
+Parameters:
+    tmp_table_name (str): 一時テーブル名
+    table_name (str): 実テーブル名
+    members (list): メンバーのリスト
+    logger (Logger): ロガーオブジェクト
+
+Returns:
+    str: 生成されたINSERT文
+"""
 def generate_insert_sql(tmp_table_name, table_name, members, logger=None):
     # ログ出力: 開始メッセージと入力変数
     if logger:

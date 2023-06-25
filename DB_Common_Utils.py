@@ -1,11 +1,14 @@
 import traceback
-
 import mysql.connector
 import os
 from configparser import ConfigParser
-
 import requests
 
+# 指定したURLからクッキー情報を取得し、ヘッダー形式に変換して返す関数
+# Parameters:
+#     url (str): クッキー情報を取得するURL
+# Returns:
+#     dict: クッキー情報を格納したヘッダー
 def get_headers_from_cookies(url):
 
     # リクエストを送信し、レスポンスを取得
@@ -21,7 +24,9 @@ def get_headers_from_cookies(url):
     
     return headers
 
-# MySQLへの接続を行う。
+# MySQLに接続するためのコネクションを取得する関数
+# Returns:
+#     MySQLConnection: MySQLへの接続コネクション
 def get_mysql_connection():
 
     # MySQL接続情報の取得方法
@@ -35,6 +40,10 @@ def get_mysql_connection():
     return cnx
 
 # Configファイルから定義ファイルに登録されているファイルパスを辞書形式で取得する関数
+# Parameters:
+#     file_path (str): Configファイルのパス
+# Returns:
+#     dict: ファイルパスを格納した辞書
 def read_config_file(file_path):
     config = {}
     with open(file_path, 'r', encoding='utf-8') as file:  # ファイルのエンコーディングを指定
@@ -46,7 +55,14 @@ def read_config_file(file_path):
                 config[key.strip()] = value.strip()
     return config
 
-# SQLクエリを実行
+# SQLクエリを実行する関数
+# Parameters:
+#     cursor (MySQLCursor): MySQLのカーソルオブジェクト
+#     query (str): 実行するSQLクエリ
+#     values (tuple): クエリに渡すパラメータ値のタプル
+#     logger (Logger): ロガーオブジェクト
+# Returns:
+#     list: クエリの結果を格納したリスト
 def execute_sql_query(cursor, query, values, logger):
     try:
         # SQLクエリを実行

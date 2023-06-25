@@ -1,3 +1,32 @@
+"""
+このスクリプトは、YFinanceのAPIを使用してティッカーシンボルからYFinanceのデータを取得し、
+そのデータをMySQLデータベースに挿入または更新するPythonスクリプトです。以下にスクリプトの概要を説明します。
+
+1. ファイルを読み込んでディレクトリパスとSQLファイル名を取得します。
+2. 「ティッカーシンボルファイル」を読み込んで「ティッカーシンボル」のリストを取得します。
+3. MySQLデータベースに接続します。
+4. SQLクエリを実行するためのカーソルを取得します。
+5. エラーフラグを初期化します。
+6. 実行日付を取得します。
+7.「SQLファイル(INSERT文)」から「テーブル名」、「メンバー名」、「条件部」を取得する。
+8.「ティッカーシンボル」の数分、「YFinanceのAPI」より「ティッカーシンボル」を指定し、YFinanceのデータを取得する。
+9. 各ティッカーシンボルに対してINSERTクエリまたはUPDATEクエリを実行します。
+10. SELECTクエリを使用してデータの存在を確認します。
+11. データが存在する場合はUPDATEクエリを実行します。
+12. データが存在しない場合はINSERTクエリを実行します。
+13. 変更をコミットし、カーソルとデータベース接続をクローズします。
+14. 例外を処理し、エラーをログに記録します。
+
+`DB_INS_00_Utils.get_table_name_and_members`、
+`DB_Common_Utils.read_config_file`、
+`DB_Common_Utils.get_mysql_connection`、
+`DB_Common_Utils.execute_sql_query`、
+`DB_INS_00_Utils.update_data_in_table`、
+`DB_INS_00_Utils.insert_data_into_table`
+などのコードスニペットは、おそらく別のファイルで定義されたカスタムユーティリティ関数やメソッドであることに注意してください。
+
+"""
+
 import os
 import mysql.connector
 import csv
@@ -70,7 +99,7 @@ def process_data(file_path, logger):
             for symbol in symbols:
                 symbol = symbol.strip()  # シンボルの両端の空白を削除
 
-                # データを取得
+                # YFinanceのAPIより「ティッカーシンボル」を指定し、YFinanceのデータを取得
                 stock = yf.Ticker(symbol)
                 fundamental_data = stock.info
 
