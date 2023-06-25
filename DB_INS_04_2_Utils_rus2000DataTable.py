@@ -72,7 +72,7 @@ def scrape_data(headers,page):
 
     return data_list
 
-def rus2000_process_data(file_path, config_key, logger):
+def rus2000_process_data(file_path, config, logger):
     try:
 
         # ファイルからディレクトリパスとSQLファイル名を読み込む
@@ -87,8 +87,6 @@ def rus2000_process_data(file_path, config_key, logger):
         sql_files = [line.strip() for line in lines[1:]]
 
         # 「rus2000_url」と「rus2000_csv_file_path」のパスをconfigファイルより取得
-        config_path = r"C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-03_SRC\config.txt"
-        config = DB_Common_Utils.read_config_file(config_path)
         rus2000_url = config.get('rus2000_url')
         rus2000_csv_file_path = config.get('rus2000_csv_file_path')
 
@@ -217,62 +215,3 @@ def rus2000_process_data(file_path, config_key, logger):
         logger.error("エラーが発生したため、処理を終了します。")
         return
 
-# CSVのデータとDBの直近のデータの比較を行い、差分があれば差分チェックテーブルに登録を行いTRUEを返す。
-# なければFALSEを返す。
-def check_diff_rus2000(cursor, table_name, csv_data, recent_data, logger=None):
-    if logger:
-        logger.info(f"--- 関数 check_diff 開始 ---")
-        logger.debug(f"table_name: {table_name}")
-        logger.debug(f"csv_data: {csv_data}")
-        logger.debug(f"recent_data: {recent_data}")
-
-    if not csv_data:
-        if logger:
-            logger.info("--- 関数 check_diff 終了 FALSE ---")
-            logger.info("CSVデータが空です。処理をスキップします。")
-        return False
-
-    if not recent_data:
-        if logger:
-            logger.info("--- 関数 check_diff 終了 TRUE ---")
-            logger.info("DBの直近データが空です。処理をスキップし、csv_dataの内容をテーブルに登録します。")
-        return True
-
-    diff_flag = False
-    csv_symbols = [row[1] for row in csv_data]
-    recent_symbols = [row[1] for row in recent_data]
-    execution_date = datetime.now().strftime("%Y-%m-%d")
-
-    if logger:
-        logger.debug(f"csv_symbols: {csv_symbols}")
-        logger.debug(f"recent_symbols: {recent_symbols}")
-
-    for symbol in csv_symbols:
-        if symbol not in recent_symbols:
-            diff_flag = True
-            insert_query = """
-            INSERT INTO `{table_name}` (`Date_YYYYMMDD`, `Symbol`, `Action`, `UPD_DATE`)
-            VALUES (%s, %s, '追加', %s)
-            ON DUPLICATE KEY UPDATE `Action` = VALUES(`Action`), `UPD_DATE` = VALUES(`UPD_DATE`)
-            """
-            insert_query = insert_query.format(table_name=table_name)
-            insert_values = (execution_date, symbol, datetime.now())
-            cursor.execute(insert_query, insert_values)
-
-    for symbol in recent_symbols:
-        if symbol not in csv_symbols:
-            diff_flag = True
-            insert_query = """
-            INSERT INTO `{table_name}` (`Date_YYYYMMDD`, `Symbol`, `Action`, `UPD_DATE`)
-            VALUES (%s, %s, '削除', %s)
-            ON DUPLICATE KEY UPDATE `Action` = VALUES(`Action`), `UPD_DATE` = VALUES(`UPD_DATE`)
-            """
-            insert_query = insert_query.format(table_name=table_name)
-            insert_values = (execution_date, symbol, datetime.now())
-            cursor.execute(insert_query, insert_values)
-
-    if logger:
-        logger.info(f"--- 関数 check_diff 終了 ---")
-        logger.debug(f"diff_flag: {diff_flag}")
-
-    return diff_flag

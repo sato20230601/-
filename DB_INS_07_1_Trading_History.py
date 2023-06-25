@@ -73,12 +73,10 @@ def main():
 
         # 「Trading_History_csv_file_path」のパスをconfigファイルより取得
         config_path = r"C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-03_SRC\config.txt"
-        config_key_DF = "DownloadFolder"
-        config_key_TH = "Trading_History_csv_dir_path"
-
         config = DB_Common_Utils.read_config_file(config_path)
-        download_folder = config.get(config_key_DF)
-        Trading_History_csv_dir_path = config.get(config_key_TH)
+
+        download_folder = config.get("DownloadFolder")
+        Trading_History_csv_dir_path = config.get("Trading_History_csv_dir_path")
 
         # ファイルの検索パターン
         search_pattern = os.path.join(download_folder, '*tradehistory(US)*.csv')

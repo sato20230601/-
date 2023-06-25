@@ -61,7 +61,7 @@ def scrape_data(url, logger):
 
     return calendar_data
 
-def EcoCalender_process_data(file_path, config_key, logger):
+def EcoCalender_process_data(file_path, config, logger):
     try:
         # ファイルからディレクトリパスとSQLファイル名を読み込む
         with open(file_path, 'r', encoding='utf-8') as file:
@@ -75,8 +75,6 @@ def EcoCalender_process_data(file_path, config_key, logger):
         sql_files = [line.strip() for line in lines[1:]]
 
         # 「EcoCalender_url」と「EcoCalender_csv_file_path」のパスをconfigファイルより取得
-        config_path = r"C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-03_SRC\config.txt"
-        config = DB_Common_Utils.read_config_file(config_path)
         EcoCalender_url = config.get('EcoCalender_url')
         EcoCalender_csv_file_path = config.get('EcoCalender_csv_file_path')
 

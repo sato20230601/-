@@ -8,6 +8,9 @@ import mysql.connector
 
 from DB_INS_04_2_Utils_rus2000DataTable import rus2000_process_data
 
+# 共通関数の読み込み
+import DB_Common_Utils
+
 def main():
     # デフォルトの文字エンコーディングを変更
     # sys.stdout.reconfigure(encoding='utf-8')
@@ -51,8 +54,10 @@ def main():
 
     # データ処理を実行
     try:
-        config_key = "rus2000_csv_file_path"
-        rus2000_process_data(file_path,config_key,logger)
+        config_path = r"C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-03_SRC\config.txt"
+        config = DB_Common_Utils.read_config_file(config_path)
+
+        rus2000_process_data(file_path,config,logger)
     except Exception as e:
         logger.exception("予期しないエラーが発生しました。")
 

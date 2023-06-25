@@ -8,6 +8,9 @@ import mysql.connector
 
 from DB_INS_02_2_Utils_RakFinTraRst import csv_process_data
 
+# 共通関数の読み込み
+import DB_Common_Utils
+
 def main():
     # ロギングの設定
     log_directory = r"C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-03_SRC\LOG"
@@ -45,8 +48,11 @@ def main():
 
     # データ処理を実行
     try:
-        config_key = "csv_file_path"
-        csv_process_data(file_path, config_key, logger)
+
+        config_path = r"C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-03_SRC\config.txt"
+        config = DB_Common_Utils.read_config_file(config_path)
+
+        csv_process_data(file_path, config, logger)
     except Exception as e:
         logger.exception("予期しないエラーが発生しました。")
 

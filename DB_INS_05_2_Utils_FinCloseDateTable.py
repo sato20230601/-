@@ -53,7 +53,7 @@ def scrape_data(headers,logger):
 
     return calendar_data
 
-def FinCloseDate_process_data(file_path, config_key, logger):
+def FinCloseDate_process_data(file_path, config, logger):
     try:
 
         # ファイルからディレクトリパスとSQLファイル名を読み込む
@@ -68,9 +68,6 @@ def FinCloseDate_process_data(file_path, config_key, logger):
         sql_files = [line.strip() for line in lines[1:]]
 
         # 「FinCloseDate_url」と「FinCloseDate_csv_file_path」のパスをconfigファイルより取得
-        config_path = r"C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-03_SRC\config.txt"
-
-        config = DB_Common_Utils.read_config_file(config_path)
         FinCloseDate_url = config.get('FinCloseDate_url')
         FinCloseDate_csv_file_path = config.get('FinCloseDate_csv_file_path')
 
