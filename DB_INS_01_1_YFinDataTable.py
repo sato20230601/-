@@ -1,3 +1,18 @@
+"""
+このスクリプトは、YFinanceのデータを取得してMySQLデータベースに挿入または更新することを目的とします。
+スクリプトの処理フローは以下の通りです。
+
+1. 必要なライブラリとモジュールをインポートします。
+2. ログの設定を行います。ログファイルのディレクトリを作成し、ログのフォーマットとハンドラーを設定します。
+3. yfinanceの設定を行います。
+4. 処理を開始するログメッセージを記録します。
+5. SQLファイルのパスを取得します。コマンドライン引数が指定されていない場合は、デフォルトのパスを使用します。
+6. `process_data`関数を呼び出してデータの処理を実行します。
+7. エラーが発生した場合は例外を処理し、エラーログを記録します。
+8. 処理が完了したことを示すログメッセージを記録します。
+
+"""
+
 import os
 import sys
 import mysql.connector
@@ -26,7 +41,7 @@ def main():
     logger.addHandler(file_handler)
 
     console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.DEBUG)
+    console_handler.setLevel(logging.INFO)
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
 

@@ -26,7 +26,7 @@ def main():
     logger.addHandler(file_handler)
 
     console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.WARN)
+    console_handler.setLevel(logging.INFO)
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
 
@@ -52,7 +52,6 @@ def main():
 
     # 処理終了
     logger.info("処理が完了しました。")
-
 
 if __name__ == "__main__":
     main()

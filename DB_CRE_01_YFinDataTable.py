@@ -37,7 +37,7 @@ def main():
 
     # コンソールハンドラを作成してログをコンソールに出力します
     console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.WARN)
+    console_handler.setLevel(logging.WARNING)
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
 
