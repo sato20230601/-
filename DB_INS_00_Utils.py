@@ -25,6 +25,11 @@ import DB_Common_Utils
 #
 def read_csv_data(csv_file_path, logger=None):
 
+    # ログ出力: 開始メッセージと入力データ
+    if logger:
+        logger.info(f"--- 関数 read_csv_data 開始 ---")
+        logger.debug(f"csv_file_path: {csv_file_path}")
+
     csv_data = []
 
     with open(csv_file_path, 'r', encoding='utf-8') as csvfile:
@@ -37,14 +42,10 @@ def read_csv_data(csv_file_path, logger=None):
         for row in reader:
             csv_data.append(row)
 
-    # ログ出力: 開始メッセージと入力データ
-    if logger:
-        logger.info(f"--- 関数 read_csv_data 開始 ---")
-        logger.info(f"csv_file_path: {csv_file_path}")
-
     # ログ出力: 出力データ
     if logger:
-        logger.info(f"csv_data: {csv_data}")
+        logger.info(f"--- 関数 read_csv_data 終了 ---")
+        logger.debug(f"csv_data: {csv_data}")
 
     return csv_data
 
@@ -62,7 +63,7 @@ def get_recent_data(cursor,table_name,logger):
     # ログ出力: 開始メッセージと入力変数
     if logger:
         logger.info(f"--- 関数 get_recent_data 開始 ---")
-        logger.info(f"table_name: {table_name}")
+        logger.debug(f"table_name: {table_name}")
 
     # 直近の「取得年月日」とティッカーシンボルを取得するSQL文
     query = """
@@ -79,7 +80,7 @@ def get_recent_data(cursor,table_name,logger):
     # ログ出力: 終了メッセージと戻り値（正常終了の場合）
     if logger:
         logger.info(f"--- 関数 get_recent_data 正常終了 ---")
-#        logger.info(f"戻り値: {result}")
+        logger.debug(f"戻り値: {result}")
 
     return result
 """
@@ -100,9 +101,9 @@ Returns:
 def check_diff(cursor, table_name, csv_data, csv_no, recent_data, recent_no, logger=None):
     if logger:
         logger.info(f"--- 関数 check_diff 開始 ---")
-        logger.info(f"table_name: {table_name}")
-        logger.info(f"csv_data: {csv_data}")
-        logger.info(f"recent_data: {recent_data}")
+        logger.debug(f"table_name: {table_name}")
+        logger.debug(f"csv_data: {csv_data}")
+        logger.debug(f"recent_data: {recent_data}")
 
     if not csv_data:
         if logger:
@@ -122,8 +123,8 @@ def check_diff(cursor, table_name, csv_data, csv_no, recent_data, recent_no, log
     execution_date = datetime.now().strftime("%Y-%m-%d")
 
     if logger:
-        logger.info(f"csv_symbols: {csv_symbols}")
-        logger.info(f"recent_symbols: {recent_symbols}")
+        logger.debug(f"csv_symbols: {csv_symbols}")
+        logger.debug(f"recent_symbols: {recent_symbols}")
 
     for symbol in csv_symbols:
         if symbol not in recent_symbols:
@@ -151,7 +152,7 @@ def check_diff(cursor, table_name, csv_data, csv_no, recent_data, recent_no, log
 
     if logger:
         logger.info(f"--- 関数 check_diff 終了 ---")
-        logger.info(f"diff_flag: {diff_flag}")
+        logger.debug(f"diff_flag: {diff_flag}")
 
     return diff_flag
 
@@ -202,9 +203,9 @@ def insert_data_into_table(cursor, table_name, columns, values, logger):
     # ログ出力: 開始メッセージと入力変数
     if logger:
         logger.info(f"--- 関数 insert_data_into_table 開始 ---")
-        logger.info(f"table_name: {table_name}")
-        logger.info(f"columns: {columns}")
-        logger.info(f"values: {values}")
+        logger.debug(f"table_name: {table_name}")
+        logger.debug(f"columns: {columns}")
+        logger.debug(f"values: {values}")
 
     # INSERT文を構築
     placeholders = ', '.join(['%s'] * len(columns))
@@ -213,12 +214,25 @@ def insert_data_into_table(cursor, table_name, columns, values, logger):
 
     # ログ出力: INSERT文
     if logger:
-        logger.info(f"生成されたINSERT文: {insert_query}")
+        logger.debug(f"生成されたINSERT文: {insert_query}")
 
     # データを挿入
     DB_Common_Utils.execute_sql_query(cursor, insert_query, values, logger)
 
+    if logger:
+        logger.info(f"--- 関数 insert_data_into_table 終了 ---")
+
 def update_data_in_table(cursor, table_name, update_columns, values, condition_columns, condition_values, logger):
+
+    # ログ出力: 開始メッセージと入力変数
+    if logger:
+        logger.info(f"--- 関数 update_data_in_table 開始 ---")
+        logger.debug(f"table_name: {table_name}")
+        logger.debug(f"update_columns: {update_columns}")
+        logger.debug(f"values: {values}")
+        logger.debug(f"condition_columns: {condition_columns}")
+        logger.debug(f"condition_values: {condition_values}")
+
     # UPDATE文を構築
     update_columns_str = ', '.join(update_columns)
     condition_str = ' AND '.join([f"{column} = %s" for column in condition_columns])
@@ -226,6 +240,9 @@ def update_data_in_table(cursor, table_name, update_columns, values, condition_c
 
     # データを更新
     DB_Common_Utils.execute_sql_query(cursor, update_query, values + condition_values, logger)
+
+    if logger:
+        logger.info(f"--- 関数 update_data_in_table 終了 ---")
 
 """
 一時テーブルから実テーブルへのINSERT文を生成する関数
@@ -243,9 +260,9 @@ def generate_insert_sql(tmp_table_name, table_name, members, logger=None):
     # ログ出力: 開始メッセージと入力変数
     if logger:
         logger.info(f"--- 関数 generate_insert_sql 開始 ---")
-        logger.info(f"tmp_table_name: {tmp_table_name}")
-        logger.info(f"table_name: {table_name}")
-        logger.info(f"members: {members}")
+        logger.debug(f"tmp_table_name: {tmp_table_name}")
+        logger.debug(f"table_name: {table_name}")
+        logger.debug(f"members: {members}")
 
     # membersの数を取得
     num_members = len(members)
@@ -285,18 +302,18 @@ def generate_insert_sql(tmp_table_name, table_name, members, logger=None):
         "REAL_TABLE.quantity <> TMP_TABLE.quantity"
         " ORDER BY 1,2,3,4,5"
     )
-    logger.info(f"select_sql文: {select_sql}")
+    logger.debug(f"select_sql文: {select_sql}")
 
     # INSERT文の作成
     insert_sql = f"INSERT INTO {table_name} ({', '.join(insert_columns)}) {select_sql}"
 
     # ログ出力: INSERT文
     if logger:
-        logger.info(f"生成されたINSERT文: {insert_sql}")
+        logger.debug(f"生成されたINSERT文: {insert_sql}")
 
     # ログ出力: 終了メッセージと戻り値（正常終了の場合）
     if logger:
         logger.info(f"--- 関数 generate_insert_sql 正常終了 ---")
-        logger.info(f"戻り値: {insert_sql}")
+        logger.debug(f"戻り値: {insert_sql}")
 
     return insert_sql

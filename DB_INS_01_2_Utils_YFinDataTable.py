@@ -109,12 +109,12 @@ def process_data(file_path, logger):
                 for member in members:
                     if member == 'INS_DATE':
                         value = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        logger.info(f"1:{member}:{value}")
+                        logger.debug(f"1:{member}:{value}")
                         insert_values.append(value)
 
                     elif member == 'UPD_DATE':
                         value = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        logger.info(f"2:{member}:{value}")
+                        logger.debug(f"2:{member}:{value}")
                         insert_values.append(None)
                         update_values.append(value)
 
@@ -125,7 +125,7 @@ def process_data(file_path, logger):
 
                     else:
                         value = fundamental_data.get(member, None)
-                        logger.info(f"3:{member}:{value}")
+                        logger.debug(f"3:{member}:{value}")
                         insert_values.append(value)
                         update_values.append(value)
 
@@ -142,17 +142,17 @@ def process_data(file_path, logger):
 
                 # SQL文を表示またはログファイルに書き込み
                 logger.debug("実行するSQL文:")
-                logger.info(select_query % tuple(select_values))  # 値をセットしたSQL文を表示
+                logger.debug(select_query % tuple(select_values))  # 値をセットしたSQL文を表示
 
                 result = DB_Common_Utils.execute_sql_query(cursor, select_query, select_values, logger)
-                logger.info(f"SELECTの結果: {result}")
+                logger.debug(f"SELECTの結果: {result}")
 
                 if result:
                     # データが存在する場合はUPDATE文を実行
                     update_columns = [f"{member} = %s" for member in members if member != 'INS_DATE']
 
                     # SQL文を表示またはログファイルに書き込み
-                    logger.info(update_values)  # 値をセットしたSQL文を表示
+                    logger.debug(update_values)  # 値をセットしたSQL文を表示
 
                     # テーブル名がFinancials,MarketData,RiskAssessmentの場合のみ実行日付を条件に追加
                     if table_name == "Financials" or table_name == "MarketData" or table_name == "RiskAssessment":
@@ -170,7 +170,7 @@ def process_data(file_path, logger):
                     # データが存在しない場合はINSERT文を実行
 
                     # SQL文を表示またはログファイルに書き込み
-                    logger.info(insert_values)  # 値をセットしたSQL文を表示
+                    logger.debug(insert_values)  # 値をセットしたSQL文を表示
 
                     # INSERT文を実行
                     DB_INS_00_Utils.insert_data_into_table(cursor, table_name, members, tuple(insert_values), logger)
