@@ -88,7 +88,7 @@ def main():
 
         # CSVファイルを取り込むフォルダに移動
         for download_file in download_files:
-            destination_path = os.path.join(Trading_History_csv_dir_path, os.path.basename(file))
+            destination_path = os.path.join(Trading_History_csv_dir_path, os.path.basename(download_file))
             shutil.move(download_file, destination_path)
 
         csv_file_paths = glob.glob(os.path.join(Trading_History_csv_dir_path, "*.csv"))

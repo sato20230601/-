@@ -171,14 +171,14 @@ def insert_data_into_table(cursor, table_name, columns, values, logger):
     # データを挿入
     DB_Common_Utils.execute_sql_query(cursor, insert_query, values, logger)
 
-def update_data_in_table(cursor, table_name, update_columns, values, condition_column, condition_value, logger):
-
+def update_data_in_table(cursor, table_name, update_columns, values, condition_columns, condition_values, logger):
     # UPDATE文を構築
     update_columns_str = ', '.join(update_columns)
-    update_query = f"UPDATE {table_name} SET {update_columns_str} WHERE {condition_column} = %s"
+    condition_str = ' AND '.join([f"{column} = %s" for column in condition_columns])
+    update_query = f"UPDATE {table_name} SET {update_columns_str} WHERE {condition_str}"
 
     # データを更新
-    DB_Common_Utils.execute_sql_query(cursor, update_query, values + [condition_value], logger)
+    DB_Common_Utils.execute_sql_query(cursor, update_query, values + condition_values, logger)
 
 # 重複しないレコードの登録用INSERT文の作成
 # 呼び出し元関数

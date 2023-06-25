@@ -1,3 +1,5 @@
+import traceback
+
 import mysql.connector
 import os
 from configparser import ConfigParser
@@ -58,5 +60,5 @@ def execute_sql_query(cursor, query, values, logger):
         logger.error("エラーコード: %s", err.errno)
         logger.error("エラーメッセージ: %s", err.msg)
         logger.error("トレースバック情報: %s", traceback.format_exc())  # 修正: トレースバック情報をログに出力
-        return None
+        raise  # エラーを呼び出し元に伝える
 
