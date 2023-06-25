@@ -160,12 +160,12 @@ def EcoCalender_process_data(file_path, config_key, logger):
                     logger.debug("実行するSQL文:")
                     logger.debug(insert_query)
                     logger.debug(insert_values)
-                    logger.info(insert_query % tuple(insert_values))  # 値をセットしたSQL文を表示
+                    logger.debug(insert_query % tuple(insert_values))  # 値をセットしたSQL文を表示
                     try:
                         # INSERT文を実行
                         cursor.execute(insert_query, insert_values)
                         cnx.commit()
-                        logger.info("データを挿入しました。:[%d]", row_index)
+                        logger.debug("データを挿入しました。:[%d]", row_index)
                     except mysql.connector.Error as error:
                         logger.error("INSERT文の実行中にエラーが発生しました:", error)
                         logger.error("対象行番号:[%d]", row_index)  # 対象行番号をログに出力

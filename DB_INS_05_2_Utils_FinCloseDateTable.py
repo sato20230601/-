@@ -43,13 +43,13 @@ def scrape_data(headers,logger):
         # 各要素を文字列として処理する
         extracted_data = [str(item) for item in extracted_data]
         # 出力をUTF-8エンコーディングで行う
-        logger.info(','.join(extracted_data))
+        logger.debug(','.join(extracted_data))
   
         calendar_data.append(extracted_data)
 
     # データを表示
     if len(calendar_data) == 0:
-        logger.info('No data found.')
+        logger.debug('No data found.')
 
     return calendar_data
 
@@ -150,7 +150,7 @@ def FinCloseDate_process_data(file_path, config_key, logger):
                     logger.debug("実行するSQL文:")
                     logger.debug(insert_query)
                     logger.debug(insert_values)
-                    logger.info(insert_query % tuple(insert_values))  # 値をセットしたSQL文を表示
+                    logger.debug(insert_query % tuple(insert_values))  # 値をセットしたSQL文を表示
                     try:
                         # INSERT文を実行
                         cursor.execute(insert_query, insert_values)

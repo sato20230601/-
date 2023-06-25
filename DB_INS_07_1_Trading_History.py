@@ -44,7 +44,7 @@ def main():
     logger.addHandler(file_handler)
 
     console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.WARN) 
+    console_handler.setLevel(logging.INFO) 
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
 
@@ -92,6 +92,11 @@ def main():
             shutil.move(download_file, destination_path)
 
         csv_file_paths = glob.glob(os.path.join(Trading_History_csv_dir_path, "*.csv"))
+
+        if len(csv_file_paths) == 0:
+            logger.info("CSVファイルが存在しません。処理をスキップします。")
+            return
+
         for csv_file in csv_file_paths:
 
             logger.info(f"処理中のCSVファイル名: {csv_file}")

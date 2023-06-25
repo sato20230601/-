@@ -186,7 +186,7 @@ def rus2000_process_data(file_path, config_key, logger):
                         logger.debug("実行するSQL文:")
                         logger.debug(insert_query)
                         logger.debug(insert_values)
-                        logger.info(insert_query % tuple(insert_values))  # 値をセットしたSQL文を表示
+                        logger.debug(insert_query % tuple(insert_values))  # 値をセットしたSQL文を表示
                         try:
                             # INSERT文を実行
                             cursor.execute(insert_query, insert_values)
@@ -222,9 +222,9 @@ def rus2000_process_data(file_path, config_key, logger):
 def check_diff_rus2000(cursor, table_name, csv_data, recent_data, logger=None):
     if logger:
         logger.info(f"--- 関数 check_diff 開始 ---")
-        logger.info(f"table_name: {table_name}")
-        logger.info(f"csv_data: {csv_data}")
-        logger.info(f"recent_data: {recent_data}")
+        logger.debug(f"table_name: {table_name}")
+        logger.debug(f"csv_data: {csv_data}")
+        logger.debug(f"recent_data: {recent_data}")
 
     if not csv_data:
         if logger:
@@ -244,8 +244,8 @@ def check_diff_rus2000(cursor, table_name, csv_data, recent_data, logger=None):
     execution_date = datetime.now().strftime("%Y-%m-%d")
 
     if logger:
-        logger.info(f"csv_symbols: {csv_symbols}")
-        logger.info(f"recent_symbols: {recent_symbols}")
+        logger.debug(f"csv_symbols: {csv_symbols}")
+        logger.debug(f"recent_symbols: {recent_symbols}")
 
     for symbol in csv_symbols:
         if symbol not in recent_symbols:
@@ -273,8 +273,6 @@ def check_diff_rus2000(cursor, table_name, csv_data, recent_data, logger=None):
 
     if logger:
         logger.info(f"--- 関数 check_diff 終了 ---")
-        logger.info(f"diff_flag: {diff_flag}")
+        logger.debug(f"diff_flag: {diff_flag}")
 
     return diff_flag
-
-
