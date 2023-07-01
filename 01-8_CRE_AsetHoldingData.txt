@@ -1,0 +1,4 @@
+C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-01_SQL
+01-12_CRE_AssetData.sql
+01-13_CRE_HoldingDetails.sql
+01-14_CRE_ExchangeRate.sql

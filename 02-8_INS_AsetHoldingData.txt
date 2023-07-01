@@ -1,0 +1,4 @@
+C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-01_SQL
+02-12_INS_AssetData.sql
+02-13_INS_HoldingDetails.sql
+02-14_INS_ExchangeRate.sql
