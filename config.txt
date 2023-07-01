@@ -10,4 +10,5 @@ EcoCalender_url=https://www.rakuten-sec.co.jp/web/market/ginfo_calendar/keizai_c
 EcoCalender_csv_file_path=G:\マイドライブ\CSV\06_EcoCalender\EcoCalender.csv
 Trading_History_csv_file_path=G:\マイドライブ\CSV\楽天\tradehistory(US).csv
 Trading_History_csv_dir_path=G:\マイドライブ\CSV\楽天
+AsetHoldingData_csv_dir_path=G:\マイドライブ\CSV\楽天
 DownloadFolder=C:\Users\sabe2\Downloads

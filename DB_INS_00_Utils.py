@@ -8,6 +8,7 @@ from datetime import date
 from configparser import ConfigParser
 import logging
 import traceback
+import shutil
 
 import requests
 from bs4 import BeautifulSoup
@@ -317,3 +318,31 @@ def generate_insert_sql(tmp_table_name, table_name, members, logger=None):
         logger.debug(f"戻り値: {insert_sql}")
 
     return insert_sql
+
+def move_processed_csv(csv_file_path,folder_name,logger):
+
+    # 開始ログを出力
+    logger.info("CSVファイルの移動処理を開始します。")
+    
+    # 引数の値をログに出力
+    logger.info(f"入力引数 csv_file_path: {csv_file_path}")
+    
+    # ファイルの存在するフォルダのパスを取得
+    csv_directory = os.path.dirname(csv_file_path)
+    
+    # 「取込済」フォルダのパスを作成
+    processed_directory = os.path.join(csv_directory, folder_name)
+    
+    # 「取込済」フォルダが存在しない場合は作成
+    os.makedirs(processed_directory, exist_ok=True)
+
+    # 移動先のファイルパスを作成
+    new_file_name = f"{os.path.basename(csv_file_path)}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    new_file_path = os.path.join(processed_directory, new_file_name)
+    
+    # ファイルの移動
+    shutil.move(csv_file_path, new_file_path)
+    
+    # 終了ログを出力
+    logger.info(f"CSVファイルを移動しました。移動先: {new_file_path}")
+
