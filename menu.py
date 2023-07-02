@@ -54,7 +54,6 @@ def show_dir_files(log_folder):
             log_path = os.path.join(log_folder, log_file)
 
             display_log_file(log_path)
-
             while True:
                 sub_choice = input("q: メニューに戻る　n: ログのリストを表示して選択する d: ログを削除する")
                 if sub_choice == "q":
@@ -70,22 +69,32 @@ def show_dir_files(log_folder):
                 else:
                     print("無効な選択肢です。メニューに戻ります。")
 
-            # # ログのリストを再表示
-            # files = os.listdir(LOG_FOLDER)
-            # print("===== ログファイル一覧 =====")
-            # for i, file in enumerate(files):
-            #     print(f"{i+1}. {file}")
-            # print("==========================")
-
         except ValueError:
             print("無効な選択肢です。もう一度選択してください。")
 
 def display_log_file(file_path):
     try:
         with open(file_path, "r", encoding="utf-8") as file:
-            print(f"=== {file_path} の内容 ===")
-            print(file.read())
-            print("=====================")
+            lines = file.readlines()
+            page_size = 10  # 1ページに表示する行数を指定（この場合は10行）
+            total_pages = (len(lines) // page_size) + 1  # 全体のページ数を計算
+            current_page = 1  # 現在のページを初期化
+
+            while True:
+                os.system('cls' if os.name == 'nt' else 'clear')  # 画面をクリア
+                print(f"=== {file_path} の内容 ===")
+                start_index = (current_page - 1) * page_size
+                end_index = start_index + page_size
+                print("".join(lines[start_index:end_index]))
+
+                print(f"ページ: {current_page}/{total_pages}")
+
+                if current_page < total_pages:
+                    input("Enterキーを押すと次のページを表示します。")
+                    current_page += 1
+                else:
+                    break
+
     except FileNotFoundError:
         print("指定されたログファイルが見つかりません。")
 
@@ -211,7 +220,7 @@ def main():
                 sub_choice = input("ログファイルの番号を入力してください: ")
                 file_path = get_log_file_path(sub_choice)
                 if file_path:
-                    display_log_file(file_path)
+                    choice = display_log_file(file_path)
                 else:
                     print("無効な選択肢です。もう一度選択してください。")
 
