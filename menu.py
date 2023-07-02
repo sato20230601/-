@@ -98,12 +98,12 @@ def display_log_file(file_path):
     except FileNotFoundError:
         print("指定されたログファイルが見つかりません。")
 
-def get_dir_file_path(sub_choice,file_dir):
-    files = os.listdir(file_dir)
+def get_dir_file_path(sub_choice,dir_path):
+    files = os.listdir(dir_path)
     try:
         log_index = int(sub_choice) - 1
         if log_index >= 0 and log_index < len(files):
-            return os.path.join(file_dir, files[log_index])
+            return os.path.join(dir_path, files[log_index])
     except ValueError:
         pass
     return None
