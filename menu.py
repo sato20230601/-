@@ -19,6 +19,7 @@ def show_menu():
     print("7. 取引履歴情報の取込み")
     print("8. 資産合計・保有商品詳細の取込み")
     print("9. ログの確認")
+    print("10.SQLファイルの確認")
     print("q. 終了")
     print("===================")
 
@@ -220,7 +221,23 @@ def main():
                 sub_choice = input("ログファイルの番号を入力してください: ")
                 file_path = get_dir_file_path(sub_choice,log_folder)
                 if file_path:
-                    choice = display_log_file(file_path)
+                    display_log_file(file_path)
+                else:
+                    print("無効な選択肢です。もう一度選択してください。")
+
+        elif choice == "10":
+
+            sql_folder = config.get("SQL_FOLDER")
+
+            sub_choice_10 = show_dir_files(sql_folder)
+            if sub_choice_10 == "q":
+                choice = "q"
+                continue
+            else:
+                sub_choice = input("SQLファイルの番号を入力してください: ")
+                file_path = get_dir_file_path(sub_choice,sql_folder)
+                if file_path:
+                    display_log_file(file_path)
                 else:
                     print("無効な選択肢です。もう一度選択してください。")
 
