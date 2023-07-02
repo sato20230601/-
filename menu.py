@@ -36,7 +36,7 @@ def show_log_files():
 
         choice = input("表示するログの番号を入力してください (q: 戻る): ")
         if choice == "q":
-            return
+            return choice
 
         try:
             log_index = int(choice) - 1
@@ -50,19 +50,26 @@ def show_log_files():
             display_log_file(log_path)
 
             while True:
-                sub_choice = input("q: メニューに戻る　n: ログのリストを表示して選択する")
+                sub_choice = input("q: メニューに戻る　n: ログのリストを表示して選択する d: ログを削除する")
                 if sub_choice == "q":
                     return sub_choice
                 elif sub_choice == "n":
                     break
+                elif sub_choice == "d":
+                    delete_log_file(log_path)
+                    print(f"ログファイル {log_file} を削除しました。")
+                    input("エンターキーを押して続行してください。")
+                    sub_choice = "n"
+                    break
                 else:
                     print("無効な選択肢です。メニューに戻ります。")
 
-           # ログのリストを再表示
-            print("===== ログファイル一覧 =====")
-            for i, file in enumerate(files):
-                print(f"{i+1}. {file}")
-            print("==========================")
+            # # ログのリストを再表示
+            # files = os.listdir(LOG_FOLDER)
+            # print("===== ログファイル一覧 =====")
+            # for i, file in enumerate(files):
+            #     print(f"{i+1}. {file}")
+            # print("==========================")
 
         except ValueError:
             print("無効な選択肢です。もう一度選択してください。")
@@ -86,6 +93,12 @@ def get_log_file_path(sub_choice):
     except ValueError:
         pass
     return None
+def delete_log_file(file_path):
+    try:
+        os.remove(file_path)
+        print("ログファイルを削除しました。")
+    except FileNotFoundError:
+        print("ログファイルが見つかりませんでした。")
 
 def main():
     while True:
