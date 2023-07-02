@@ -12,3 +12,4 @@ Trading_History_csv_file_path=G:\マイドライブ\CSV\楽天\tradehistory(US).
 Trading_History_csv_dir_path=G:\マイドライブ\CSV\楽天
 AsetHoldingData_csv_dir_path=G:\マイドライブ\CSV\楽天
 DownloadFolder=C:\Users\sabe2\Downloads
+LOG_FOLDER=c:/Users/sabe2/OneDrive/デスクトップ/Python/06_DATABASE/06-03_SRC/LOG/
