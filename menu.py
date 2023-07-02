@@ -9,6 +9,7 @@ config_path = r"C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06
 config = DB_Common_Utils.read_config_file(config_path)
 
 def show_menu():
+    os.system("cls")  # ページの先頭に移動
     print("===== メニュー =====")
     print("1. YFinanceの情報取得")
     print("2. 楽天証券の情報取得")
@@ -16,10 +17,12 @@ def show_menu():
     print("4. ラッセル2000取得")
     print("5. 決算日情報取得")
     print("6. 経済カレンダー情報取得")
-    print("7. 取引履歴情報の取込み")
-    print("8. 資産合計・保有商品詳細の取込み")
+    print("7. 取引履歴情報の取込み(楽天証券)")
+    print("8. 資産合計・保有商品詳細の取込み(楽天証券)")
     print("9. ログの確認")
     print("10.SQLファイルの確認")
+    print("11.SQL配置ファイルの確認")
+    print("12.ソースの確認")
     print("q. 終了")
     print("===================")
 
@@ -66,6 +69,7 @@ def show_dir_files(folder):
                     break
                 elif sub_choice == "d":
                     delete_log_file(log_path)
+                    os.system("cls")  # ページの先頭に移動
                     print(f"ファイル {log_file} を削除しました。")
                     input("エンターキーを押して続行してください。")
                     sub_choice = "n"
@@ -242,6 +246,38 @@ def main():
             else:
                 sub_choice = input("SQLファイルの番号を入力してください: ")
                 file_path = get_dir_file_path(sub_choice,sql_folder)
+                if file_path:
+                    display_log_file(file_path)
+                else:
+                    print("無効な選択肢です。もう一度選択してください。")
+
+        elif choice == "11":
+
+            sql_adm_folder = config.get("SQL_ADM_FOLDER")
+
+            sub_choice_11 = show_dir_files(sql_adm_folder)
+            if sub_choice_11 == "q":
+                choice = "q"
+                continue
+            else:
+                sub_choice = input("SQLファイルの番号を入力してください: ")
+                file_path = get_dir_file_path(sub_choice,sql_adm_folder)
+                if file_path:
+                    display_log_file(file_path)
+                else:
+                    print("無効な選択肢です。もう一度選択してください。")
+
+        elif choice == "12":
+
+            sorce_folder = config.get("SORCE_FOLDER")
+
+            sub_choice_12 = show_dir_files(sorce_folder)
+            if sub_choice_12 == "q":
+                choice = "q"
+                continue
+            else:
+                sub_choice = input("ソースファイルの番号を入力してください: ")
+                file_path = get_dir_file_path(sub_choice,sorce_folder)
                 if file_path:
                     display_log_file(file_path)
                 else:
