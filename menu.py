@@ -30,39 +30,39 @@ def execute_script(script_path):
     command = f'c:/Users/sabe2/OneDrive/デスクトップ/Python/venv/Scripts/python.exe {script_path}'
     os.system(command)
 
-def show_dir_files(log_folder):
+def show_dir_files(folder):
 
     while True:
 
-        files = os.listdir(log_folder)
-        print("===== ログファイル一覧 =====")
+        files = os.listdir(folder)
+        print("===== ファイル一覧 =====")
         for i, file in enumerate(files):
             print(f"{i+1}. {file}")
         print("==========================")
 
-        choice = input("表示するログの番号を入力してください (q: 戻る): ")
+        choice = input("表示するファイルの番号を入力してください (q: 戻る): ")
         if choice == "q":
             return choice
 
         try:
-            log_index = int(choice) - 1
-            if log_index < 0 or log_index >= len(files):
+            file_index = int(choice) - 1
+            if file_index < 0 or file_index >= len(files):
                 print("無効な選択肢です。もう一度選択してください。")
                 continue
 
-            log_file = files[log_index]
-            log_path = os.path.join(log_folder, log_file)
+            log_file = files[file_index]
+            log_path = os.path.join(folder, log_file)
 
             display_log_file(log_path)
             while True:
-                sub_choice = input("q: メニューに戻る　n: ログのリストを表示して選択する d: ログを削除する")
+                sub_choice = input("q: メニューに戻る　n: ファイルのリストを表示して選択する d: ファイルを削除する")
                 if sub_choice == "q":
                     return sub_choice
                 elif sub_choice == "n":
                     break
                 elif sub_choice == "d":
                     delete_log_file(log_path)
-                    print(f"ログファイル {log_file} を削除しました。")
+                    print(f"ファイル {log_file} を削除しました。")
                     input("エンターキーを押して続行してください。")
                     sub_choice = "n"
                     break
@@ -98,16 +98,16 @@ def display_log_file(file_path):
     except FileNotFoundError:
         print("指定されたログファイルが見つかりません。")
 
-def get_log_file_path(sub_choice):
-    log_dir = r"c:/Users/sabe2/OneDrive/デスクトップ/Python/06_DATABASE/06-03_SRC/LOG"
-    files = os.listdir(log_dir)
+def get_dir_file_path(sub_choice,file_dir):
+    files = os.listdir(file_dir)
     try:
         log_index = int(sub_choice) - 1
         if log_index >= 0 and log_index < len(files):
-            return os.path.join(log_dir, files[log_index])
+            return os.path.join(file_dir, files[log_index])
     except ValueError:
         pass
     return None
+
 def delete_log_file(file_path):
     try:
         os.remove(file_path)
@@ -218,7 +218,7 @@ def main():
                 continue
             else:
                 sub_choice = input("ログファイルの番号を入力してください: ")
-                file_path = get_log_file_path(sub_choice)
+                file_path = get_dir_file_path(sub_choice,log_folder)
                 if file_path:
                     choice = display_log_file(file_path)
                 else:
