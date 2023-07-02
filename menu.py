@@ -36,9 +36,12 @@ def show_dir_files(folder):
     while True:
 
         files = os.listdir(folder)
+        os.system("cls")  # ページの先頭に移動
         print("===== ファイル一覧 =====")
         for i, file in enumerate(files):
-            print(f"{i+1}. {file}")
+            file_path = os.path.join(folder, file)
+            if os.path.isfile(file_path):  # ファイルのみ表示
+                print(f"{i+1}. {file}")
         print("==========================")
 
         choice = input("表示するファイルの番号を入力してください (q: 戻る): ")
@@ -90,8 +93,11 @@ def display_log_file(file_path):
 
                 print(f"ページ: {current_page}/{total_pages}")
 
+                choice = input("Enterキーを押すと次のページを表示します。qを入力して終了します。")
+                if choice == "q":
+                    break
+
                 if current_page < total_pages:
-                    input("Enterキーを押すと次のページを表示します。")
                     current_page += 1
                 else:
                     break
