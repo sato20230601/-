@@ -1,6 +1,12 @@
 import os
+from configparser import ConfigParser
 
-LOG_FOLDER = r"c:/Users/sabe2/OneDrive/デスクトップ/Python/06_DATABASE/06-03_SRC/LOG"
+# 共通関数の読み込み
+import DB_Common_Utils
+
+#configファイルより取得
+config_path = r"C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-03_SRC\config.txt"
+config = DB_Common_Utils.read_config_file(config_path)
 
 def show_menu():
     print("===== メニュー =====")
@@ -24,11 +30,11 @@ def execute_script(script_path):
     command = f'c:/Users/sabe2/OneDrive/デスクトップ/Python/venv/Scripts/python.exe {script_path}'
     os.system(command)
 
-def show_log_files():
+def show_dir_files(log_folder):
 
     while True:
 
-        files = os.listdir(LOG_FOLDER)
+        files = os.listdir(log_folder)
         print("===== ログファイル一覧 =====")
         for i, file in enumerate(files):
             print(f"{i+1}. {file}")
@@ -45,7 +51,7 @@ def show_log_files():
                 continue
 
             log_file = files[log_index]
-            log_path = os.path.join(LOG_FOLDER, log_file)
+            log_path = os.path.join(log_folder, log_file)
 
             display_log_file(log_path)
 
@@ -195,7 +201,9 @@ def main():
 
         elif choice == "9":
 
-            sub_choice_9 = show_log_files()
+            log_folder = config.get("LOG_FOLDER")
+
+            sub_choice_9 = show_dir_files(log_folder)
             if sub_choice_9 == "q":
                 choice = "q"
                 continue
