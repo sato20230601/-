@@ -126,6 +126,11 @@ def process_data(file_path, logger):
                     else:
                         value = fundamental_data.get(member, None)
                         logger.debug(f"3:{member}:{value}")
+
+                        if value == "Infinity":
+                            value = None
+                            logger.debug(f"infinityの置換:{member}:{value}")
+
                         insert_values.append(value)
                         update_values.append(value)
 
