@@ -325,7 +325,7 @@ def move_processed_csv(csv_file_path,folder_name,logger):
     logger.info("CSVファイルの移動処理を開始します。")
     
     # 引数の値をログに出力
-    logger.info(f"入力引数 csv_file_path: {csv_file_path}")
+    logger.debug(f"入力引数 csv_file_path: {csv_file_path}")
     
     # ファイルの存在するフォルダのパスを取得
     csv_directory = os.path.dirname(csv_file_path)
