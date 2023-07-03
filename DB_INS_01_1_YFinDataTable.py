@@ -35,7 +35,7 @@ def main():
 
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 
-    file_handler = logging.FileHandler(log_file)
+    file_handler = logging.FileHandler(log_file,encoding='utf-8)
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
@@ -50,6 +50,7 @@ def main():
 
     # 処理開始
     logger.info("処理を開始します。")
+    
 
     # SQLファイル処理
     # デフォルトのファイルパスを設定します

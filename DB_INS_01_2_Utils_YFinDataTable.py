@@ -169,7 +169,7 @@ def process_data(file_path, logger):
 
                     # UPDATE文を実行
                     DB_INS_00_Utils.update_data_in_table(cursor, table_name, update_columns, tuple(update_values), update_conditions, update_conditions_values, logger)
-                    logger.info(f"{sql_file} が正常に更新されました。:{table_name}:{update_values}:{update_conditions_values}")
+                    logger.debug(f"{sql_file} が正常に更新されました。:{table_name}:{update_values}:{update_conditions_values}")
 
                 else:
                     # データが存在しない場合はINSERT文を実行
@@ -179,7 +179,7 @@ def process_data(file_path, logger):
 
                     # INSERT文を実行
                     DB_INS_00_Utils.insert_data_into_table(cursor, table_name, members, tuple(insert_values), logger)
-                    logger.info(f"{sql_file} が正常に登録されました。:{table_name}:{members}:{insert_values}")
+                    logger.debug(f"{sql_file} が正常に登録されました。:{table_name}:{members}:{insert_values}")
 
         # カーソルと接続を閉じる
         cursor.close()
