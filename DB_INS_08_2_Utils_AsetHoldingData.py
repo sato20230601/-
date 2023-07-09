@@ -36,7 +36,8 @@ class SQLFileInfo:
 
 def validate_row(row, current_table, logger):
 
-    logger.info(f"関数 validate_row の実行開始。入力引数: row={row}, current_table={current_table}")
+    logger.info(f"関数 validate_row の実行開始")
+    logger.debug(f"入力引数: row={row}, current_table={current_table}")
 
     # 空行のチェック
     if not row:
@@ -64,7 +65,7 @@ def validate_row(row, current_table, logger):
             logger.debug("Invalid number of columns in ExchangeRate row")
             return False
 
-    logger.info(f"関数 validate_row 終了")
+    logger.info(f"関数 validate_row 正常終了")
 
     return True
 
@@ -82,9 +83,16 @@ def extract_date_from_csv_filename(csv_file_path,logger):
 def parse_date_string(date_string,logger):
     # 年月日の文字列を解析してDate型に変換します
     try:
+        logger.info("関数 parse_date_string の実行開始")
+        logger.debug(f"入力引数: date_string={date_string}")
+
         year = int(date_string[0:4])
         month = int(date_string[4:6])
         day = int(date_string[6:8])
+
+        logger.info("関数 parse_date_string の正常終了")
+        logger.debug(f"戻り値: year={year}:month={month}:day={day}")
+
         return date(year, month, day)
 
     except ValueError:
@@ -136,7 +144,7 @@ def insert_data(cursor, table_name, members, additional_statement, table_data, l
             logger.debug(f"insert_statement={insert_statement}")
             logger.debug(f"row_values={tuple(row_values)}")  # row_valuesをタプルとしてログ出力
 
-            logger.info(insert_statement.format(*row_values))
+            logger.debug(insert_statement.format(*row_values))
             cursor.execute(insert_statement, tuple(row_values))
 
         except Exception as e:
@@ -144,12 +152,13 @@ def insert_data(cursor, table_name, members, additional_statement, table_data, l
             logger.error(f"エラーログ: エラー内容: {traceback.format_exc()}")
             return False  # 挿入失敗した場合はFalseを返す
 
-    logger.info("関数 insert_data の実行終了")
+    logger.info("関数 insert_data の正常終了")
     return True  # 挿入成功した場合はTrueを返す
 
 def AsetHoldingData_insert(cursor, sql_file_path, AsetHoldingData_csv_file_path, logger):
     try:
-        logger.info(f"関数 AsetHoldingData_insert の実行開始。入力引数: cursor={cursor}, file_path={sql_file_path}, AsetHoldingData_csv_file_path={AsetHoldingData_csv_file_path}")
+        logger.info(f"関数 AsetHoldingData_insert の実行開始")
+        logger.debug(f"入力引数: cursor={cursor}, file_path={sql_file_path}, AsetHoldingData_csv_file_path={AsetHoldingData_csv_file_path}")
 
         # SQLファイルパスからSQLディレクトリパスとSQLファイル名を読み込む
         with open(sql_file_path, 'r', encoding='utf-8') as sql_file:
@@ -175,7 +184,7 @@ def AsetHoldingData_insert(cursor, sql_file_path, AsetHoldingData_csv_file_path,
         for sql_file in sql_files:
             sql_file_path = f"{sql_directory_path}/{sql_file}"
 
-            logger.info(f"sql_file_path={sql_file_path}")
+            logger.debug(f"sql_file_path={sql_file_path}")
 
             table_name, members, additional_statement = DB_INS_00_Utils.get_table_name_and_members(sql_file_path)
 
@@ -197,7 +206,7 @@ def AsetHoldingData_insert(cursor, sql_file_path, AsetHoldingData_csv_file_path,
         date_string = extract_date_from_csv_filename(AsetHoldingData_csv_file_path,logger)
         date_value = parse_date_string(date_string,logger)
 
-        logger.info(f"date_value={date_value}")
+        logger.debug(f"date_value={date_value}")
 
         # CSVファイルのデータを「AssetData」「HoldingDetails」「ExchangeRate」の順に登録
         with codecs.open(AsetHoldingData_csv_file_path, 'r', 'sjis', 'utf-8') as utf_file:
@@ -244,7 +253,6 @@ def AsetHoldingData_insert(cursor, sql_file_path, AsetHoldingData_csv_file_path,
 
                         # LastUpdateを追加
                         row[4] = last_update
-
                         exchange_rate.append(row)
 
             logger.debug("asset_data:")
@@ -288,8 +296,10 @@ def AsetHoldingData_insert(cursor, sql_file_path, AsetHoldingData_csv_file_path,
 
        # エラーフラグの処理
         if has_error:
+            logger.info("関数 insert_data の異状終了")
             return False
         else:
+            logger.info("関数 insert_data の正常終了")
             return True
 
     except FileNotFoundError:
