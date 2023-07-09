@@ -182,6 +182,26 @@ def get_en_id(cursor, english_text):
     cursor.execute(select_statement, (english_text,))
     return cursor.fetchone()[0]
 
+def get_jp_words(cursor):
+    # jp_wordsテーブルから登録されている英語の一覧を取得する関数
+    select_statement = "SELECT japanese FROM jp_words"
+    cursor.execute(select_statement)
+    return [row[0] for row in cursor.fetchall()]
+
+def insert_jp_word(cursor, japanese_text):
+    # jp_wordsテーブルに日本語の情報を登録する関数
+    insert_statement = "INSERT INTO jp_words (japanese, INS_DATE) VALUES (%s, %s) ON DUPLICATE KEY UPDATE UPD_DATE = %s"
+    current_date = datetime.now()
+    cursor.execute(insert_statement, (japanese_text, current_date, current_date))
+    jp_id = get_jp_id(cursor, japanese_text)
+    return jp_id
+
+def get_jp_id(cursor, japanese_text):
+    # jp_wordsテーブルから指定された英語の情報に対応するjp_idを取得する関数
+    select_statement = "SELECT jp_id FROM jp_words WHERE japanese = %s"
+    cursor.execute(select_statement, (japanese_text,))
+    return cursor.fetchone()[0]
+
 def insert_sector(cursor, sector_text):
 
     # en_wordsテーブルに登録されている英語の一覧を取得
@@ -338,6 +358,67 @@ def insert_sec_ind(cursor, sector_id, industry_id):
     current_date = datetime.now()
     cursor.execute(insert_statement, (sector_id, industry_id, current_date, current_date))
 
+def insert_en_jp_translation_data(cursor, csv_file, logger):
+    try:
+        logger.info(f"関数 insert_en_jp_translation_data の実行開始")
+
+        # en_words,jp_wordsテーブルに登録されている一覧を取得 
+        en_words_set = set(get_en_words(cursor))
+        jp_words_set = set(get_jp_words(cursor))
+
+        # csvファイルの読み込み
+        with open(csv_file, 'r', encoding='utf-8') as file:
+            csv_data = csv.reader(file, delimiter='\t')
+
+            # セクターと業種の情報を登録および取得し、セクター業種を登録
+            for row in csv_data:
+                en_text = row[0]
+                jp_text = row[1]
+
+                logger.debug(f"英語: {en_text}, 日本語: {jp_text}")
+
+                # 英語の情報を登録および取得
+                if en_text not in en_words_set:
+                    # en_wordsテーブルにセクターの情報を登録
+                    logger.debug(f"英語を登録します: {en_text}")
+                    en_id =  insert_en_word(cursor,en_text)
+                    logger.debug(f"英語の登録が完了しました。en_id: {en_id}")
+
+                else:
+                    # en_wordsテーブルからen_idを取得
+                    logger.debug(f"英語の情報が既に存在します: {en_text}")
+                    en_id = get_en_id(cursor, en_text)
+
+                # 日本語の情報を登録および取得
+                if jp_text not in jp_words_set:
+                    # jp_wordsテーブルに業種の情報を登録
+                    logger.debug(f"日本語を登録します: {jp_text}")
+                    jp_id =  insert_jp_word(cursor,jp_text)
+                    logger.debug(f"日本語の登録が完了しました。jp_id: {jp_id}")
+
+                else:
+                    # jp_wordsテーブルからjp_idを取得
+                    logger.debug(f"日本語の情報が既に存在します: {jp_text}")
+                    jp_id = get_jp_id(cursor, jp_text)
+
+                # en_jpテーブルに英語-日本語を登録
+                logger.debug(f"英語-日本語を登録します: en_id={en_id},jp_id={jp_id}")
+                insert_en_jp_translation(cursor, en_id, jp_id)
+                logger.debug("英語-日本語の登録が完了しました。")
+
+        logger.info(f"英語-日本語の登録が完了しました。")
+        return True
+
+    except Exception as e:
+        logger.exception("英語-日本語データの登録中にエラーが発生しました。")
+        return False
+
+def insert_en_jp_translation(cursor, en_id, jp_id):
+    # en_jpテーブルに英語-日本語データを登録する関数
+    insert_statement = "INSERT INTO en_jp_translation (en_id, jp_id, INS_DATE) VALUES (%s, %s, %s) ON DUPLICATE KEY UPDATE UPD_DATE = %s"
+    current_date = datetime.now()
+    cursor.execute(insert_statement, (en_id, jp_id, current_date, current_date))
+
 def SectorIndustrySymbol_insert(cursor, sql_info, csv_file, logger):
     try:
         logger.info("関数 SectorIndustrySymbol_insert の実行開始")
@@ -369,6 +450,12 @@ def SectorIndustrySymbol_insert(cursor, sql_info, csv_file, logger):
         elif table_name == "sec_ind":
             # "sec_ind"テーブルの処理
             if not insert_sec_ind_data(cursor, csv_file, logger):
+                logger.error(f"{table_name}テーブルへのデータの挿入に失敗しました。")
+                has_error = True
+
+        elif table_name == "en_jp_translation":
+            # "en_jp_translation"テーブルの処理
+            if not insert_en_jp_translation_data(cursor, csv_file, logger):
                 logger.error(f"{table_name}テーブルへのデータの挿入に失敗しました。")
                 has_error = True
 
