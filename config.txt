@@ -16,3 +16,4 @@ LOG_FOLDER=c:/Users/sabe2/OneDrive/デスクトップ/Python/06_DATABASE/06-03_S
 SQL_FOLDER=C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-01_SQL/
 SQL_ADM_FOLDER=C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-02_OBJ/
 SORCE_FOLDER=C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-03_SRC/
+SectorIndustrySymbol_csv_dir_path=G:\マイドライブ\CSV\09_SectorIndustrySymbol
