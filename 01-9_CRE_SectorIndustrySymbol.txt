@@ -1,0 +1,8 @@
+C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-01_SQL
+01-15_CRE_en_words.sql
+01-16_CRE_jp_words.sql
+01-17_CRE_en_jp_translation.sql
+01-18_CRE_industry.sql
+01-19_CRE_sector.sql
+01-20_CRE_sec_ind.sql
+01-21_CRE_sec_ind_symbol.sql
