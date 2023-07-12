@@ -80,28 +80,16 @@ def main():
 
         timestamp = datetime.now().strftime('%Y%m%d')
 
-        # セクター:業種の情報を取得
-#        select_data = get_sector_industry_sp500_data(cursor)
-
-        # 取得したセクターや業種の情報をCSVに出力
-#        csv_file = f"{timestamp}_sec_ind.csv"
-
-#        csv_path = os.path.join(csv_dir_path, csv_file)
-#        write_data_to_csv(select_data, csv_path)
-
-        # CSVファイルのパスをログに出力
-#        logger.info(f"セクター:業種の情報をCSVファイルに出力しました: {csv_path}")
-
-        # セクター:業種:Symbolの情報を取得
+        # sp500のセクター:業種:Symbolの情報を取得
         select_data = get_sector_industry_symbol_sp500_data(cursor)
 
-        # 取得したセクターや業種の情報をCSVに出力
+        # 取得したsp500のセクター:業種:Symbolの情報をCSVに出力
         csv_file = f"{timestamp}_sec_ind_symbol.csv"
 
         csv_path = os.path.join(csv_dir_path, csv_file)
         write_data_to_csv(select_data, csv_path)
 
-        logger.info(f"セクター:業種の情報をCSVファイルに出力しました: {csv_path}")
+        logger.info(f"sp500のセクター:業種:Symbolの情報をCSVファイルに出力しました: {csv_path}")
 
         # SQLファイル一覧からSQLのファイルの数分SQLデータを取得する。
         sql_file_info = get_sql_file_info(sql_file_path, logger)

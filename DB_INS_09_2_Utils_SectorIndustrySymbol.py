@@ -25,7 +25,7 @@ import DB_INS_00_Utils
 # 共通関数の読み込み
 import DB_Common_Utils
 
-# 新たな関数: SP500からセクターや業種の情報を取得する関数
+# 新たな関数: SP500からセクター：業種の情報を取得する関数
 def get_sector_industry_sp500_data(cursor):
     select_statement = """
     SELECT
@@ -41,7 +41,7 @@ def get_sector_industry_sp500_data(cursor):
     cursor.execute(select_statement)
     return cursor.fetchall()
 
-# 新たな関数: SP500からセクターや業種の情報を取得する関数
+# 新たな関数: SP500からセクター：業種：シンボルの情報を取得する関数
 def get_sector_industry_symbol_sp500_data(cursor):
     select_statement = """
     SELECT
