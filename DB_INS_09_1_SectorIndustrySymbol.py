@@ -16,6 +16,9 @@ from DB_INS_00_Utils import move_processed_csv
 
 # SectorIndustrySymbol用関数
 from DB_INS_09_2_Utils_SectorIndustrySymbol import (
+    get_sector_industry_symbol_sp500_data,
+    get_sector_industry_sp500_data,
+    write_data_to_csv,
     get_sql_file_info,
     insert_data,
     SectorIndustrySymbol_insert
@@ -23,9 +26,6 @@ from DB_INS_09_2_Utils_SectorIndustrySymbol import (
 
 # 主処理
 def main():
-
-    # デフォルトの文字エンコーディングを変更
-    # sys.stderr.reconfigure(encoding='utf-8')
 
     # ロギングの設定
     log_directory = r"C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-03_SRC\LOG"
@@ -73,23 +73,47 @@ def main():
         # カーソルを取得
         cursor = cnx.cursor()
 
-        # SQLファイル一覧からSQLのファイルの数分SQLデータを取得する。
-        sql_file_info = get_sql_file_info(sql_file_path, logger)
-
         # 「SectorIndustrySymbol_csv_dir_path」のパスをconfigファイルより取得
         config_path = r"C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-03_SRC\config.txt"
         config = DB_Common_Utils.read_config_file(config_path)
+        csv_dir_path = config.get("SectorIndustrySymbol_csv_dir_path")
 
-        SectorIndustrySymbol_csv_dir_path = config.get("SectorIndustrySymbol_csv_dir_path")
+        timestamp = datetime.now().strftime('%Y%m%d')
+
+        # セクター:業種の情報を取得
+#        select_data = get_sector_industry_sp500_data(cursor)
+
+        # 取得したセクターや業種の情報をCSVに出力
+#        csv_file = f"{timestamp}_sec_ind.csv"
+
+#        csv_path = os.path.join(csv_dir_path, csv_file)
+#        write_data_to_csv(select_data, csv_path)
+
+        # CSVファイルのパスをログに出力
+#        logger.info(f"セクター:業種の情報をCSVファイルに出力しました: {csv_path}")
+
+        # セクター:業種:Symbolの情報を取得
+        select_data = get_sector_industry_symbol_sp500_data(cursor)
+
+        # 取得したセクターや業種の情報をCSVに出力
+        csv_file = f"{timestamp}_sec_ind_symbol.csv"
+
+        csv_path = os.path.join(csv_dir_path, csv_file)
+        write_data_to_csv(select_data, csv_path)
+
+        logger.info(f"セクター:業種の情報をCSVファイルに出力しました: {csv_path}")
+
+        # SQLファイル一覧からSQLのファイルの数分SQLデータを取得する。
+        sql_file_info = get_sql_file_info(sql_file_path, logger)
 
         # SQLファイルの対象テーブルのCSVファイルを抽出し、登録する。
         for sql_info in sql_file_info:
             # SQLファイル名の取得
             table_name = sql_info.table_name
-            search_pattern = f"*{table_name}*.csv"
+            search_pattern = f"*{table_name}.csv"
 
             # ファイルの検索パターン
-            search_csv = os.path.join(SectorIndustrySymbol_csv_dir_path, search_pattern)
+            search_csv = os.path.join(csv_dir_path, search_pattern)
 
             # 検索パターンにマッチするファイルを取得
             csv_files = glob.glob(search_csv)
@@ -109,7 +133,7 @@ def main():
         cnx.close()
 
     except Exception as e:
-        logger.exception("予期しないエラーが発生しました。")
+        logger.exception("セクターや業種の情報の取得およびCSV出力中にエラーが発生しました。")
 
     finally:
         # カーソルと接続を閉じる

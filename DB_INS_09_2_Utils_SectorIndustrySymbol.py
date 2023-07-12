@@ -25,6 +25,47 @@ import DB_INS_00_Utils
 # 共通関数の読み込み
 import DB_Common_Utils
 
+# 新たな関数: SP500からセクターや業種の情報を取得する関数
+def get_sector_industry_sp500_data(cursor):
+    select_statement = """
+    SELECT
+        SP.GICS_Sector as "sector",
+        SP.GICS_Sub_Industry as "industry"
+    FROM sp500 SP
+    GROUP BY
+        SP.GICS_Sector,
+        SP.GICS_Sub_Industry
+    ORDER BY
+        1, 2
+    """
+    cursor.execute(select_statement)
+    return cursor.fetchall()
+
+# 新たな関数: SP500からセクターや業種の情報を取得する関数
+def get_sector_industry_symbol_sp500_data(cursor):
+    select_statement = """
+    SELECT
+        SP.GICS_Sector as "sector",
+        SP.GICS_Sub_Industry as "industry",
+        SP.Symbol as "Symbol"
+    FROM sp500 SP
+    GROUP BY
+        SP.GICS_Sector,
+        SP.GICS_Sub_Industry,
+        SP.Symbol
+    ORDER BY
+        1, 2, 3
+    """
+    cursor.execute(select_statement)
+    return cursor.fetchall()
+
+# 新たな関数: 取得したセクターや業種の情報をCSVに出力する関数
+def write_data_to_csv(data, csv_file):
+    with open(csv_file, 'w', newline='', encoding='utf-8') as file:
+        writer = csv.writer(file, delimiter='\t')  # タブ区切りの設定
+#        writer.writerow(['Sector', 'Industry'])  # ヘッダー行の書き込み
+        writer.writerows(data)  # データの書き込み
+
 # SQLファイル情報のクラス
 class SQLFileInfo:
     def __init__(self, table_name, members, additional_statement, sql_file_path):
@@ -125,43 +166,6 @@ def get_sql_file_info(sql_file_path,logger):
 
     return sql_file_info
 
-def get_sector(cursor):
-    # sectorテーブルから指定されたセクター名の一覧を取得する関数
-    select_statement = "SELECT en_words.english FROM sector JOIN en_words ON sector.en_id = en_words.en_id"
-    cursor.execute(select_statement)
-    return [row[0] for row in cursor.fetchall()]
-
-def insert_sector_data(cursor, csv_file, logger):
-    try:
-        logger.info(f"関数 insert_sector_data の実行開始")
-
-        # sectorテーブルに登録されている英語の一覧を取得
-        sector_set = set(get_sector(cursor))
-
-        # csvファイルの読み込み
-        with open(csv_file, 'r', encoding='utf-8') as file:
-            csv_data = csv.reader(file)
-            
-            # 英語の情報を登録および取得し、セクターを登録
-            for row in csv_data:
-                sector_text = row[0]
-                if sector_text not in sector_set:
-                    # sectorテーブルに英語の情報を登録
-                    sector_id = insert_sector(cursor, sector_text)
-                else:
-                    # sectorテーブルからsector_idを取得
-                    sector_id = get_sector_id(cursor, sector_text)
-                
-                # sectorテーブルにセクターを登録
-                insert_sector(cursor, sector_id)
-
-        logger.info(f"セクターデータの登録が完了しました。")
-        return True
-
-    except Exception as e:
-        logger.exception("セクターデータの登録中にエラーが発生しました。")
-        return False
-
 def get_en_words(cursor):
     # en_wordsテーブルから登録されている英語の一覧を取得する関数
     select_statement = "SELECT english FROM en_words"
@@ -201,6 +205,101 @@ def get_jp_id(cursor, japanese_text):
     select_statement = "SELECT jp_id FROM jp_words WHERE japanese = %s"
     cursor.execute(select_statement, (japanese_text,))
     return cursor.fetchone()[0]
+
+def insert_en_jp_translation_data(cursor, csv_file, logger):
+    try:
+        logger.info(f"関数 insert_en_jp_translation_data の実行開始")
+
+        # en_words,jp_wordsテーブルに登録されている一覧を取得 
+        en_words_set = set(get_en_words(cursor))
+        jp_words_set = set(get_jp_words(cursor))
+
+        # csvファイルの読み込み
+        with open(csv_file, 'r', encoding='utf-8') as file:
+            csv_data = csv.reader(file, delimiter='\t')
+
+            # 英語と日本語の情報を登録および取得し、英語-日本語を登録
+            for row in csv_data:
+                en_text = row[0]
+                jp_text = row[1]
+
+                logger.debug(f"英語: {en_text}, 日本語: {jp_text}")
+
+                # 英語の情報を登録および取得
+                if en_text not in en_words_set:
+                    # en_wordsテーブルにセクターの情報を登録
+                    logger.debug(f"英語を登録します: {en_text}")
+                    en_id =  insert_en_word(cursor,en_text)
+                    logger.debug(f"英語の登録が完了しました。en_id: {en_id}")
+
+                else:
+                    # en_wordsテーブルからen_idを取得
+                    logger.debug(f"英語の情報が既に存在します: {en_text}")
+                    en_id = get_en_id(cursor, en_text)
+
+                # 日本語の情報を登録および取得
+                if jp_text not in jp_words_set:
+                    # jp_wordsテーブルに業種の情報を登録
+                    logger.debug(f"日本語を登録します: {jp_text}")
+                    jp_id =  insert_jp_word(cursor,jp_text)
+                    logger.debug(f"日本語の登録が完了しました。jp_id: {jp_id}")
+
+                else:
+                    # jp_wordsテーブルからjp_idを取得
+                    logger.debug(f"日本語の情報が既に存在します: {jp_text}")
+                    jp_id = get_jp_id(cursor, jp_text)
+
+                # en_jpテーブルに英語-日本語を登録
+                logger.debug(f"英語-日本語を登録します: en_id={en_id},jp_id={jp_id}")
+                insert_en_jp_translation(cursor, en_id, jp_id)
+                logger.debug("英語-日本語の登録が完了しました。")
+
+        logger.info(f"英語-日本語の登録が完了しました。")
+        return True
+
+    except Exception as e:
+        logger.exception("英語-日本語データの登録中にエラーが発生しました。")
+        return False
+
+def insert_en_jp_translation(cursor, en_id, jp_id):
+    # en_jpテーブルに英語-日本語データを登録する関数
+    insert_statement = "INSERT INTO en_jp_translation (en_id, jp_id, INS_DATE) VALUES (%s, %s, %s) ON DUPLICATE KEY UPDATE UPD_DATE = %s"
+    current_date = datetime.now()
+    cursor.execute(insert_statement, (en_id, jp_id, current_date, current_date))
+
+def get_sector(cursor):
+    # sectorテーブルから指定されたセクター名の一覧を取得する関数
+    select_statement = "SELECT en_words.english FROM sector JOIN en_words ON sector.en_id = en_words.en_id"
+    cursor.execute(select_statement)
+    return [row[0] for row in cursor.fetchall()]
+
+def insert_sector_data(cursor, csv_file, logger):
+    try:
+        logger.info(f"関数 insert_sector_data の実行開始")
+
+        # sectorテーブルに登録されている英語の一覧を取得
+        sector_set = set(get_sector(cursor))
+
+        # csvファイルの読み込み
+        with open(csv_file, 'r', encoding='utf-8') as file:
+            csv_data = csv.reader(file)
+            
+            # 英語の情報を登録および取得し、セクターを登録
+            for row in csv_data:
+                sector_text = row[0]
+                if sector_text not in sector_set:
+                    # sectorテーブルに英語の情報を登録
+                    sector_id = insert_sector(cursor, sector_text)
+                else:
+                    # sectorテーブルからsector_idを取得
+                    sector_id = get_sector_id(cursor, sector_text)
+
+        logger.info(f"セクターデータの登録が完了しました。")
+        return sector_id
+
+    except Exception as e:
+        logger.exception("セクターデータの登録中にエラーが発生しました。")
+        return False
 
 def insert_sector(cursor, sector_text):
 
@@ -258,11 +357,8 @@ def insert_industry_data(cursor, csv_file, logger):
                     # industryテーブルからindustry_idを取得
                     industry_id = get_industry_id(cursor, industry_text)
 
-                # industryテーブルに業種を登録
-                insert_industry(cursor, industry_id)
-
         logger.info(f"業種データの登録が完了しました。")
-        return True
+        return industry_id
 
     except Exception as e:
         logger.exception("業種データの登録中にエラーが発生しました。")
@@ -297,13 +393,20 @@ def get_industry_id(cursor, industry_text):
     else:
         return None
 
+def get_sec_ind(cursor):
+    # sec_indテーブルからセクター業種の情報を取得する関数
+    select_statement = """
+    SELECT
+        sector_id,
+        industry_id
+    FROM sec_ind
+    """
+    cursor.execute(select_statement)
+    return cursor.fetchall()
+
 def insert_sec_ind_data(cursor, csv_file, logger):
     try:
         logger.info(f"関数 insert_sec_ind_data の実行開始")
-
-        # sector,industryテーブルに登録されている一覧を取得 
-        sector_set = set(get_sector(cursor))
-        industry_set = set(get_industry(cursor))
 
         # csvファイルの読み込み
         with open(csv_file, 'r', encoding='utf-8') as file:
@@ -315,35 +418,7 @@ def insert_sec_ind_data(cursor, csv_file, logger):
                 industry_text = row[1]
 
                 logger.debug(f"セクター: {sector_text}, 業種: {industry_text}")
-
-                # セクターの情報を登録および取得
-                if sector_text not in sector_set:
-                    # en_wordsテーブルにセクターの情報を登録
-                    logger.debug(f"セクターを登録します: {sector_text}")
-                    sector_id =  insert_sector(cursor,sector_text)
-                    logger.debug(f"セクターの登録が完了しました。sector_id: {sector_id}")
-
-                else:
-                    # en_wordsテーブルからsector_idを取得
-                    logger.debug(f"セクターの情報が既に存在します: {sector_text}")
-                    sector_id = get_sector_id(cursor, sector_text)
-
-                # 業種の情報を登録および取得
-                if industry_text not in industry_set:
-                    # en_wordsテーブルに業種の情報を登録
-                    logger.debug(f"業種を登録します: {industry_text}")
-                    industry_id =  insert_industry(cursor,industry_text)
-                    logger.debug(f"業種の登録が完了しました。industry_id: {industry_id}")
-
-                else:
-                    # en_wordsテーブルからindustry_idを取得
-                    logger.debug(f"業種の情報が既に存在します: {industry_text}")
-                    industry_id = get_industry_id(cursor, industry_text)
-
-                # sector_industryテーブルにセクター業種を登録
-                logger.debug(f"セクター業種を登録します: セクターID={sector_id}, 業種ID={industry_id}")
-                insert_sec_ind(cursor, sector_id, industry_id)
-                logger.debug("セクター業種の登録が完了しました。")
+                sec_ind_id = insert_sec_ind(cursor, sector_text, industry_text,logger)
 
         logger.info(f"セクター業種データの登録が完了しました。")
         return True
@@ -352,72 +427,99 @@ def insert_sec_ind_data(cursor, csv_file, logger):
         logger.exception("セクター業種データの登録中にエラーが発生しました。")
         return False
 
-def insert_sec_ind(cursor, sector_id, industry_id):
-    # sector_industryテーブルにセクター業種を登録する関数
-    insert_statement = "INSERT INTO sec_ind (sector_id, industry_id, INS_DATE) VALUES (%s, %s, %s) ON DUPLICATE KEY UPDATE UPD_DATE = %s"
-    current_date = datetime.now()
-    cursor.execute(insert_statement, (sector_id, industry_id, current_date, current_date))
+def get_sec_ind_id(cursor, sector_id, industry_id):
+    # sec_indテーブルから指定されたセクターIDと業種IDに対応するsec_ind_idを取得する関数
+    select_statement = "SELECT sec_ind_id FROM sec_ind WHERE sector_id = %s AND industry_id = %s"
+    cursor.execute(select_statement, (sector_id, industry_id))
+    result = cursor.fetchone()
+    if result:
+        sec_ind_id = result[0]
+        return sec_ind_id
+    else:
+        return None
 
-def insert_en_jp_translation_data(cursor, csv_file, logger):
+def insert_sec_ind(cursor, sector_text, industry_text,logger):
+
+    # sector,industryテーブルに登録されている一覧を取得 
+    sector_set = set(get_sector(cursor))
+    industry_set = set(get_industry(cursor))
+    sec_ind_set = set(get_sec_ind(cursor))
+
+    # セクターの情報を登録および取得
+    if sector_text not in sector_set:
+
+        # en_wordsテーブルにセクターの情報を登録
+        logger.debug(f"セクターを登録します: {sector_text}")
+        sector_id =  insert_sector(cursor,sector_text)
+        logger.debug(f"セクターの登録が完了しました。sector_id: {sector_id}")
+
+    else:
+        # en_wordsテーブルからsector_idを取得
+        logger.debug(f"セクターの情報が既に存在します: {sector_text}")
+        sector_id = get_sector_id(cursor, sector_text)
+
+    # 業種の情報を登録および取得
+    if industry_text not in industry_set:
+        # en_wordsテーブルに業種の情報を登録
+        logger.debug(f"業種を登録します: {industry_text}")
+        industry_id =  insert_industry(cursor,industry_text)
+        logger.debug(f"業種の登録が完了しました。industry_id: {industry_id}")
+
+    else:
+        # en_wordsテーブルからindustry_idを取得
+        logger.debug(f"業種の情報が既に存在します: {industry_text}")
+        industry_id = get_industry_id(cursor, industry_text)
+
+    # sector_industryテーブルにセクター：業種を登録
+    logger.debug(f"セクター：業種を登録します: セクターID={sector_id}:{sector_text}:業種ID={industry_id}:{industry_text}")
+    if (sector_id, industry_id) not in sec_ind_set:
+
+        # sector_industryテーブルにセクター業種を登録する関数
+        insert_statement = "INSERT INTO sec_ind (sector_id, industry_id, INS_DATE) VALUES (%s, %s, %s) ON DUPLICATE KEY UPDATE UPD_DATE = %s"
+        current_date = datetime.now()
+        cursor.execute(insert_statement, (sector_id, industry_id, current_date, current_date))
+        sec_ind_id = get_sec_ind_id(cursor, sector_id, industry_id)
+        logger.debug("セクター：業種の登録が完了しました。")
+    else:
+        logger.debug(f"セクター:業種の情報が既に存在します:セクターID={sector_id}:{sector_text}:業種ID={industry_id}:{industry_text}")
+        sec_ind_id = get_sec_ind_id(cursor, sector_id, industry_id)
+
+    return sec_ind_id
+
+def insert_sec_ind_symbol_data(cursor, csv_file, logger):
     try:
-        logger.info(f"関数 insert_en_jp_translation_data の実行開始")
-
-        # en_words,jp_wordsテーブルに登録されている一覧を取得 
-        en_words_set = set(get_en_words(cursor))
-        jp_words_set = set(get_jp_words(cursor))
+        logger.info(f"関数 insert_sec_ind_symbol_data の実行開始")
 
         # csvファイルの読み込み
         with open(csv_file, 'r', encoding='utf-8') as file:
             csv_data = csv.reader(file, delimiter='\t')
 
-            # セクターと業種の情報を登録および取得し、セクター業種を登録
+            # セクターと業種とシンボルの情報を登録および取得し、セクター業種シンボルを登録
             for row in csv_data:
-                en_text = row[0]
-                jp_text = row[1]
+                sector_text = row[0]
+                industry_text = row[1]
+                symbol_text = row[2]
 
-                logger.debug(f"英語: {en_text}, 日本語: {jp_text}")
+                logger.debug(f"セクター: {sector_text}, 業種: {industry_text}, symbol: {symbol_text}")
+                insert_sec_ind_symbol(cursor, sector_text, industry_text, symbol_text,logger)
 
-                # 英語の情報を登録および取得
-                if en_text not in en_words_set:
-                    # en_wordsテーブルにセクターの情報を登録
-                    logger.debug(f"英語を登録します: {en_text}")
-                    en_id =  insert_en_word(cursor,en_text)
-                    logger.debug(f"英語の登録が完了しました。en_id: {en_id}")
-
-                else:
-                    # en_wordsテーブルからen_idを取得
-                    logger.debug(f"英語の情報が既に存在します: {en_text}")
-                    en_id = get_en_id(cursor, en_text)
-
-                # 日本語の情報を登録および取得
-                if jp_text not in jp_words_set:
-                    # jp_wordsテーブルに業種の情報を登録
-                    logger.debug(f"日本語を登録します: {jp_text}")
-                    jp_id =  insert_jp_word(cursor,jp_text)
-                    logger.debug(f"日本語の登録が完了しました。jp_id: {jp_id}")
-
-                else:
-                    # jp_wordsテーブルからjp_idを取得
-                    logger.debug(f"日本語の情報が既に存在します: {jp_text}")
-                    jp_id = get_jp_id(cursor, jp_text)
-
-                # en_jpテーブルに英語-日本語を登録
-                logger.debug(f"英語-日本語を登録します: en_id={en_id},jp_id={jp_id}")
-                insert_en_jp_translation(cursor, en_id, jp_id)
-                logger.debug("英語-日本語の登録が完了しました。")
-
-        logger.info(f"英語-日本語の登録が完了しました。")
+        logger.info(f"セクター:業種:シンボルデータの登録が完了しました。")
         return True
 
     except Exception as e:
-        logger.exception("英語-日本語データの登録中にエラーが発生しました。")
+        logger.exception("セクター:業種:シンボルデータの登録中にエラーが発生しました。")
         return False
 
-def insert_en_jp_translation(cursor, en_id, jp_id):
-    # en_jpテーブルに英語-日本語データを登録する関数
-    insert_statement = "INSERT INTO en_jp_translation (en_id, jp_id, INS_DATE) VALUES (%s, %s, %s) ON DUPLICATE KEY UPDATE UPD_DATE = %s"
+def insert_sec_ind_symbol(cursor, sector_text, industry_text, symbol, logger):
+
+    sec_ind_id = insert_sec_ind(cursor, sector_text, industry_text, logger)
+
+    # sec_ind_symbolテーブルにセクター業種とシンボルを登録
+    insert_statement = "INSERT INTO sec_ind_symbol (sec_ind_id, symbol, INS_DATE) VALUES (%s, %s, %s) ON DUPLICATE KEY UPDATE UPD_DATE = %s"
     current_date = datetime.now()
-    cursor.execute(insert_statement, (en_id, jp_id, current_date, current_date))
+    cursor.execute(insert_statement, (sec_ind_id, symbol, current_date, current_date))
+
+    logger.debug("セクター業種とシンボルの登録が完了しました。")
 
 def SectorIndustrySymbol_insert(cursor, sql_info, csv_file, logger):
     try:
@@ -450,6 +552,12 @@ def SectorIndustrySymbol_insert(cursor, sql_info, csv_file, logger):
         elif table_name == "sec_ind":
             # "sec_ind"テーブルの処理
             if not insert_sec_ind_data(cursor, csv_file, logger):
+                logger.error(f"{table_name}テーブルへのデータの挿入に失敗しました。")
+                has_error = True
+
+        elif table_name == "sec_ind_symbol":
+            # "sec_ind"テーブルの処理
+            if not insert_sec_ind_symbol_data(cursor, csv_file, logger):
                 logger.error(f"{table_name}テーブルへのデータの挿入に失敗しました。")
                 has_error = True
 

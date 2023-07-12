@@ -101,85 +101,98 @@ def process_data(file_path, logger):
 
                 # YFinanceのAPIより「ティッカーシンボル」を指定し、YFinanceのデータを取得
                 stock = yf.Ticker(symbol)
-                fundamental_data = stock.info
 
-                # データをテーブルに挿入または更新
-                insert_values = []
-                update_values = []
-                for member in members:
-                    if member == 'INS_DATE':
-                        value = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        logger.debug(f"1:{member}:{value}")
-                        insert_values.append(value)
+                try:
+                    # stockオブジェクトが正しく取得されていない場合、例外が発生する可能性があるため、try-exceptブロックで処理を行う
+                    fundamental_data = stock.info
 
-                    elif member == 'UPD_DATE':
-                        value = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        logger.debug(f"2:{member}:{value}")
-                        insert_values.append(None)
-                        update_values.append(value)
+                    # stock.infoが空の場合はエラーメッセージを出力して次のシンボルの処理に進む
+                    if not fundamental_data:
+                        logger.error(f"シンボル {symbol} のデータが取得できませんでした。処理をスキップします。")
+                        continue
 
-                    elif member == 'Date_YYYYMMDD':
+                    # データをテーブルに挿入または更新
+                    insert_values = []
+                    update_values = []
+                    for member in members:
+                        if member == 'INS_DATE':
+                            value = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                            logger.debug(f"1:{member}:{value}")
+                            insert_values.append(value)
 
-                        insert_values.append(execution_date)
-                        update_values.append(execution_date)
+                        elif member == 'UPD_DATE':
+                            value = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                            logger.debug(f"2:{member}:{value}")
+                            insert_values.append(None)
+                            update_values.append(value)
 
-                    else:
-                        value = fundamental_data.get(member, None)
-                        logger.debug(f"3:{member}:{value}")
+                        elif member == 'Date_YYYYMMDD':
 
-                        if value == "Infinity":
-                            value = None
-                            logger.debug(f"infinityの置換:{member}:{value}")
+                            insert_values.append(execution_date)
+                            update_values.append(execution_date)
 
-                        insert_values.append(value)
-                        update_values.append(value)
+                        else:
+                            value = fundamental_data.get(member, None)
+                            logger.debug(f"3:{member}:{value}")
 
-                # SELECT文を実行してデータの存在有無を確認
-                # テーブル名がFinancials,MarketData,RiskAssessmentの場合のみ実行日付を条件に追加
-                if table_name == "Financials" or table_name == "MarketData" or table_name == "RiskAssessment":
+                            if value == "Infinity":
+                                value = None
+                                logger.debug(f"infinityの置換:{member}:{value}")
 
-                    select_query = f"SELECT * FROM {table_name} WHERE symbol = %s AND Date_YYYYMMDD = %s "
-                    select_values = (symbol, execution_date)
+                            insert_values.append(value)
+                            update_values.append(value)
 
-                else:
-                    select_query = f"SELECT * FROM {table_name} WHERE symbol = %s"
-                    select_values = (symbol,)
-
-                # SQL文を表示またはログファイルに書き込み
-                logger.debug("実行するSQL文:")
-                logger.debug(select_query % tuple(select_values))  # 値をセットしたSQL文を表示
-
-                result = DB_Common_Utils.execute_sql_query(cursor, select_query, select_values, logger)
-                logger.debug(f"SELECTの結果: {result}")
-
-                if result:
-                    # データが存在する場合はUPDATE文を実行
-                    update_columns = [f"{member} = %s" for member in members if member != 'INS_DATE']
-
-                    # SQL文を表示またはログファイルに書き込み
-                    logger.debug(update_values)  # 値をセットしたSQL文を表示
-
+                    # SELECT文を実行してデータの存在有無を確認
                     # テーブル名がFinancials,MarketData,RiskAssessmentの場合のみ実行日付を条件に追加
                     if table_name == "Financials" or table_name == "MarketData" or table_name == "RiskAssessment":
-                        update_conditions = ['symbol', 'Date_YYYYMMDD']
-                        update_conditions_values = (symbol, execution_date)
+
+                        select_query = f"SELECT * FROM {table_name} WHERE symbol = %s AND Date_YYYYMMDD = %s "
+                        select_values = (symbol, execution_date)
+
                     else:
-                        update_conditions = ['symbol']
-                        update_conditions_values = (symbol,)
-
-                    # UPDATE文を実行
-                    DB_INS_00_Utils.update_data_in_table(cursor, table_name, update_columns, tuple(update_values), update_conditions, update_conditions_values, logger)
-                    logger.debug(f"{sql_file} が正常に更新されました。:{table_name}:{update_values}:{update_conditions_values}")
-
-                else:
-                    # データが存在しない場合はINSERT文を実行
+                        select_query = f"SELECT * FROM {table_name} WHERE symbol = %s"
+                        select_values = (symbol,)
 
                     # SQL文を表示またはログファイルに書き込み
-                    logger.debug(insert_values)  # 値をセットしたSQL文を表示
+                    logger.debug("実行するSQL文:")
+                    logger.debug(select_query % tuple(select_values))  # 値をセットしたSQL文を表示
 
-                    # INSERT文を実行
-                    DB_INS_00_Utils.insert_data_into_table(cursor, table_name, members, tuple(insert_values), logger)
-                    logger.debug(f"{sql_file} が正常に登録されました。:{table_name}:{members}:{insert_values}")
+                    result = DB_Common_Utils.execute_sql_query(cursor, select_query, select_values, logger)
+                    logger.debug(f"SELECTの結果: {result}")
+
+                    if result:
+                        # データが存在する場合はUPDATE文を実行
+                        update_columns = [f"{member} = %s" for member in members if member != 'INS_DATE']
+
+                        # SQL文を表示またはログファイルに書き込み
+                        logger.debug(update_values)  # 値をセットしたSQL文を表示
+
+                        # テーブル名がFinancials,MarketData,RiskAssessmentの場合のみ実行日付を条件に追加
+                        if table_name == "Financials" or table_name == "MarketData" or table_name == "RiskAssessment":
+                            update_conditions = ['symbol', 'Date_YYYYMMDD']
+                            update_conditions_values = (symbol, execution_date)
+                        else:
+                            update_conditions = ['symbol']
+                            update_conditions_values = (symbol,)
+
+                        # UPDATE文を実行
+                        DB_INS_00_Utils.update_data_in_table(cursor, table_name, update_columns, tuple(update_values), update_conditions, update_conditions_values, logger)
+                        logger.debug(f"{sql_file} が正常に更新されました。:{table_name}:{update_values}:{update_conditions_values}")
+
+                    else:
+                        # データが存在しない場合はINSERT文を実行
+
+                        # SQL文を表示またはログファイルに書き込み
+                        logger.debug(insert_values)  # 値をセットしたSQL文を表示
+
+                        # INSERT文を実行
+                        DB_INS_00_Utils.insert_data_into_table(cursor, table_name, members, tuple(insert_values), logger)
+                        logger.debug(f"{sql_file} が正常に登録されました。:{table_name}:{members}:{insert_values}")
+
+                except Exception as e:
+                    logger.error(f"シンボル {symbol} のデータの取得中にエラーが発生しました。処理をスキップします。")
+                    logger.error(str(e))
+                    continue
 
         # カーソルと接続を閉じる
         cursor.close()
