@@ -20,9 +20,16 @@ import yfinance as yf
 from datetime import datetime
 from configparser import ConfigParser
 import logging
+import glob
 
-# 関数用の定義ファイルをインクルード
-from DB_INS_01_2_Utils_YFinDataTable import process_data
+# 共通関数の読み込み
+import DB_Common_Utils
+
+# YFinDataTable用関数
+from DB_INS_01_2_Utils_YFinDataTable import (
+    process_data,
+    load_symbols_from_csv
+)
 
 def main():
     # ロギングの設定
@@ -45,12 +52,8 @@ def main():
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
 
-    # yfinanceの設定
-    # logging.getLogger("yfinance").setLevel(logging.WARNING)
-
     # 処理開始
     logger.info("処理を開始します。")
-    
 
     # SQLファイル処理
     # デフォルトのファイルパスを設定します
@@ -58,20 +61,78 @@ def main():
 
     # コマンドライン引数からファイルパスとオプションを取得します
     if len(sys.argv) < 2:
-        file_path = default_file_path  # デフォルトのファイルパスを使用します
+        sql_file_path = default_file_path  # デフォルトのファイルパスを使用します
     else:
-        file_path = sys.argv[1]
+        sql_file_path = sys.argv[1]
 
     # データ処理を実行
     try:
-        process_data(file_path, logger)
+
+        # MySQLに接続
+        cnx = DB_Common_Utils.get_mysql_connection()
+
+        # カーソルを取得
+        cursor = cnx.cursor()
+
+        # ティッカーシンボルファイルからシンボルを読み込む
+        config_path = r"C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-03_SRC\config.txt"
+        config = DB_Common_Utils.read_config_file(config_path)
+        csv_dir_path = config.get('symbols_csv_dir_path')  # ティッカーシンボルが記述されたファイルのパス
+
+        search_pattern = f"*symbols.csv"
+
+        # ファイルの検索パターン
+        search_csv = os.path.join(csv_dir_path, search_pattern)
+
+        # 検索パターンにマッチするファイルを取得
+        csv_files = glob.glob(search_csv)
+
+        symbols = []
+
+        for csv_file in csv_files:
+            symbols += load_symbols_from_csv(csv_file)
+
+        # SQLファイル一覧からSQLのファイルの数分SQLデータを取得する。
+        sql_file_info = DB_Common_Utils.get_sql_file_info(sql_file_path, logger)
+
+        for symbol in symbols:
+            symbol = symbol.strip()  # シンボルの両端の空白を削除
+
+            # SQLファイルの対象テーブルのCSVファイルを抽出し、登録する。
+            for sql_info in sql_file_info:
+
+                is_successful = process_data(cursor, symbol, sql_info, logger)
+                if is_successful == True:
+                    cnx.commit()  # トランザクションをコミットする
+                elif is_successful == "No Data":
+                    logger.debug(f"データがないのでスキップします。:{symbol}")
+                    continue
+
+                elif is_successful == False:
+                    logger.debug(f"データ取得時にエラーの為スキップします。:{symbol}")
+                    continue
+
+                else:
+                    raise Exception("データの挿入に失敗しました。")
+                
+        # カーソルと接続を閉じる
+        cursor.close()
+        cnx.close()
 
     except Exception as e:
         logger.exception("予期しないエラーが発生しました。")
 
+    finally:
+        # カーソルと接続を閉じる
+        if cursor:
+            cursor.close()
+        if cnx:
+            cnx.close()
+
+        logger.info("カーソルと接続を閉じました。")
+
         # 処理終了
     logger.info("処理が完了しました。")
-
 
 if __name__ == "__main__":
     main()
