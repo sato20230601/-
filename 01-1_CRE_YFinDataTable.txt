@@ -1,0 +1,14 @@
+C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-01_SQL\01_YF
+01-01-01_CRE_yf_history_metadata.sql
+01-01-02_CRE_yf_stock_info.sql
+01-01-03_CRE_yf_financials.sql
+01-01-04_CRE_yf_cash_flow.sql
+01-01-05_CRE_yf_income_statement.sql
+01-01-06_CRE_yf_balancesheet.sql
+01-01-07_CRE_yf_actions.sql
+01-01-08-1_CRE_yf_holder_categories.sql
+01-01-08-2_CRE_yf_major_holders.sql
+01-01-09_CRE_yf_mutualfund_holders.sql
+01-01-10_CRE_yf_shares_full.sql
+01-01-11_CRE_yf_isin.sql
+01-01-12_CRE_yf_news.sql

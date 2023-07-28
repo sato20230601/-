@@ -1,0 +1,13 @@
+C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-01_SQL\01_YF
+02-01-01_INS_yf_history_metadata.sql
+02-01-02_INS_yf_stock_info.sql
+02-01-03_INS_yf_financials.sql
+02-01-04_INS_yf_cash_flow.sql
+02-01-05_INS_yf_income_statement.sql
+02-01-06_INS_yf_balancesheet.sql
+02-01-07_INS_yf_actions.sql
+02-01-08-2_INS_yf_major_holders.sql
+02-01-09_INS_yf_mutualfund_holders.sql
+02-01-10_INS_yf_shares_full.sql
+02-01-11_INS_yf_isin.sql
+02-01-12_INS_yf_news.sql
