@@ -47,7 +47,7 @@ def Trading_History_insert_tmp_data(cursor, file_path, Trading_History_csv_file_
             sql_file_path = f"{directory_path}/{sql_file}"
             logger.debug(sql_file_path)
 
-            table_name, members, additional_statement = DB_INS_00_Utils.get_table_name_and_members(sql_file_path)
+            table_name, members, additional_statement = DB_Common_Utils.get_table_name_and_members(sql_file_path)
 
             logger.debug(table_name)
             logger.debug(members)

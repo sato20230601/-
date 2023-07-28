@@ -186,7 +186,7 @@ def AsetHoldingData_insert(cursor, sql_file_path, AsetHoldingData_csv_file_path,
 
             logger.debug(f"sql_file_path={sql_file_path}")
 
-            table_name, members, additional_statement = DB_INS_00_Utils.get_table_name_and_members(sql_file_path)
+            table_name, members, additional_statement = DB_Common_Utils.get_table_name_and_members(sql_file_path)
 
             logger.debug(f"table_name={table_name}")
             logger.debug(f"members={members}")

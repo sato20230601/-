@@ -101,7 +101,7 @@ def FinCloseDate_process_data(file_path, config, logger):
             sql_file_path = f"{directory_path}/{sql_file}"
             logger.debug(sql_file_path)
 
-            table_name, members, additional_statement = DB_INS_00_Utils.get_table_name_and_members(sql_file_path)
+            table_name, members, additional_statement = DB_Common_Utils.get_table_name_and_members(sql_file_path)
             logger.debug(table_name)
             logger.debug(members)
             logger.debug(additional_statement)
