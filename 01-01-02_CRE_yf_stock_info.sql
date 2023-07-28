@@ -1,0 +1,40 @@
+CREATE TABLE yf_stock_info (
+    Date_YYYYMMDD DATE, -- 日付 (YYYY-MM-DD)
+    symbol VARCHAR(255), -- 株式のシンボル（銘柄コード）
+    maxAge INT, -- データの最大有効期限（秒単位）
+    priceHint INT, -- 価格のヒント（整数）
+    previousClose FLOAT, -- 前日の終値
+    open FLOAT, -- 始値
+    dayLow FLOAT, -- 当日の最低価格
+    dayHigh FLOAT, -- 当日の最高価格
+    regularMarketPreviousClose FLOAT, -- 通常取引市場の前日の終値
+    regularMarketOpen FLOAT, -- 通常取引市場の始値
+    regularMarketDayLow FLOAT, -- 通常取引市場の当日の最低価格
+    regularMarketDayHigh FLOAT, -- 通常取引市場の当日の最高価格
+    payoutRatio FLOAT, -- 配当利回り
+    beta FLOAT, -- ベータ値
+    trailingPE FLOAT, -- 直近の株価収益率
+    forwardPE FLOAT, -- 予想株価収益率
+    volume INT, -- 取引量（当日）
+    regularMarketVolume INT, -- 通常取引市場の取引量（当日）
+    averageVolume INT, -- 平均取引量
+    averageVolume10days INT, -- 10日間の平均取引量
+    averageDailyVolume10Day INT, -- 10日間の平均デイリー取引量
+    bid FLOAT, -- 買値（最良気配）
+    ask FLOAT, -- 売値（最良気配）
+    bidSize INT, -- 買値のサイズ（最良気配）
+    askSize INT, -- 売値のサイズ（最良気配）
+    marketCap BIGINT, -- 時価総額
+    fiftyTwoWeekLow FLOAT, -- 過去52週間の最低価格
+    fiftyTwoWeekHigh FLOAT, -- 過去52週間の最高価格
+    priceToSalesTrailing12Months FLOAT, -- 直近12か月の時価総額売上高比率
+    fiftyDayAverage FLOAT, -- 50日間の平均株価
+    twoHundredDayAverage FLOAT, -- 200日間の平均株価
+    trailingAnnualDividendRate FLOAT, -- 直近の年間配当金額
+    trailingAnnualDividendYield FLOAT, -- 直近の年間配当利回り
+    currency VARCHAR(10), -- 通貨
+    trailingPegRatio FLOAT, -- 直近の株価収益成長比率
+    INS_DATE DATETIME, -- レコードの作成日時
+    UPD_DATE DATETIME, -- レコードの更新日時
+    PRIMARY KEY (Date_YYYYMMDD, symbol) -- 主キーの設定（日付とシンボルの組み合わせ）
+);
