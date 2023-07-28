@@ -5,6 +5,5 @@ CREATE TABLE sec_ind_symbol (
   INS_DATE datetime, -- 登録日時
   UPD_DATE datetime, -- 更新日時
   PRIMARY KEY (sec_ind_id, symbol),
-  FOREIGN KEY (sec_ind_id) REFERENCES sec_ind (sec_ind_id), -- セクター業種IDの外部キー制約
-  FOREIGN KEY (symbol) REFERENCES Company (symbol) -- シンボルの外部キー制約
+  FOREIGN KEY (sec_ind_id) REFERENCES sec_ind (sec_ind_id) -- セクター業種IDの外部キー制約
 );
