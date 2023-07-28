@@ -17,7 +17,7 @@ import DB_INS_00_Utils
 # 共通関数の読み込み
 import DB_Common_Utils
 
-def sp500_process_data(file_path, config_key, logger):
+def sp500_process_data(file_path, config, logger):
     try:
 
         # ファイルからディレクトリパスとSQLファイル名を読み込む
@@ -32,8 +32,6 @@ def sp500_process_data(file_path, config_key, logger):
         sql_files = [line.strip() for line in lines[1:]]
 
         # 「sp500_url」と「500_csv_file_path」のパスをconfigファイルより取得
-        config_path = r"C:\Users\sabe2\OneDrive\デスクトップ\Python\06_DATABASE\06-03_SRC\config.txt"
-        config = DB_Common_Utils.read_config_file(config_path)
         sp500_url = config.get('sp500_url')
         sp500_csv_file_path = config.get('sp500_csv_file_path')
 
@@ -74,7 +72,7 @@ def sp500_process_data(file_path, config_key, logger):
         for sql_file in sql_files:
 
             sql_file_path = f"{directory_path}/{sql_file}"
-            table_name, members, additional_statement = DB_INS_00_Utils.get_table_name_and_members(sql_file_path)
+            table_name, members, additional_statement = DB_Common_Utils.get_table_name_and_members(sql_file_path)
             logger.debug(table_name)
             logger.debug(members)
             logger.debug(additional_statement)

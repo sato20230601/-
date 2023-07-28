@@ -78,3 +78,88 @@ def execute_sql_query(cursor, query, values, logger):
         logger.error("トレースバック情報: %s", traceback.format_exc())  # 修正: トレースバック情報をログに出力
         raise  # エラーを呼び出し元に伝える
 
+"""
+SQLファイルからテーブル名とメンバーを取得する関数
+
+Parameters:
+    sql_file_path (str): SQLファイルのパス
+
+Returns:
+    tuple: テーブル名とメンバーのリスト、追加のステートメント
+"""
+def get_table_name_and_members(sql_file_path):
+    try:
+        with open(sql_file_path, 'r', encoding='utf-8') as file:
+            insert_query = file.read()
+
+        start_index = insert_query.index('(') + 1
+        end_index = insert_query.index(')', start_index)
+        members = [m.strip() for m in insert_query[start_index:end_index].split(',')]
+        table_name = insert_query.split()[2]
+
+        # VALUESの次の行にある追加のステートメントを取得
+        values_index = insert_query.index('VALUES')
+        next_line_index = insert_query.index('\n', values_index)
+        additional_statement = insert_query[next_line_index:]
+
+        # on_index = insert_query.index('ON')
+        # additional_statement = insert_query[on_index:]
+
+        return table_name, members, additional_statement
+
+    except FileNotFoundError:
+        logger.error(f"ファイルが存在しません: {sql_file_path}")
+        return ""
+
+# SQLファイル情報のクラス
+class SQLFileInfo:
+    def __init__(self, table_name, members, additional_statement, sql_file_path):
+        self.table_name = table_name
+        self.members = members
+        self.additional_statement = additional_statement
+        self.sql_file_path = sql_file_path
+        self.data = None  # データを保持するプロパティ
+
+# SQLファイル情報の取得
+def get_sql_file_info(sql_file_path,logger):
+    """
+    SQLファイルの情報を取得します。
+
+    Args:
+        sql_file_path (str): SQLファイルのパス
+
+    Returns:
+        SQLFileInfo: SQLファイルの情報を保持するオブジェクト
+    """
+    with open(sql_file_path, 'r', encoding='utf-8') as sql_file:
+        lines = sql_file.readlines()
+
+    if len(lines) < 2:
+        logger.error("ファイルの内容が正しくありません。")
+        return None
+
+    # SQLディレクトリパスの取得
+    sql_directory_path = lines[0].strip()
+
+    # SQLファイル名の取得
+    sql_files = [line.strip() for line in lines[1:]]
+
+    # 各SQLファイルの情報を保持するリスト
+    sql_file_info = []
+
+    # 各SQLファイルとシンボルを組み合わせて実行
+    for sql_file in sql_files:
+        sql_file_path = f"{sql_directory_path}/{sql_file}"
+
+        logger.debug(f"sql_file_path={sql_file_path}")
+
+        table_name, members, additional_statement = get_table_name_and_members(sql_file_path)
+
+        logger.debug(f"table_name={table_name}")
+        logger.debug(f"members={members}")
+        logger.debug(f"additional_statement={additional_statement}")
+
+        # 各SQLファイルとシンボルを組み合わせて情報を取得し、リストに追加
+        sql_file_info.append(SQLFileInfo(table_name, members, additional_statement, sql_file_path))
+
+    return sql_file_info

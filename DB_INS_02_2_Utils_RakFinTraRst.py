@@ -80,7 +80,7 @@ def csv_process_data(file_path, config, logger):
         for sql_file in sql_files:
 
             sql_file_path = f"{directory_path}/{sql_file}"
-            table_name, members, additional_statement = DB_INS_00_Utils.get_table_name_and_members(sql_file_path)
+            table_name, members, additional_statement = DB_Common_Utils.get_table_name_and_members(sql_file_path)
 
             # CSVファイルのデータをテーブルに登録
             with open(csv_file_path, 'r', newline='', encoding='utf-8') as csvfile:
