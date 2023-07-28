@@ -158,38 +158,6 @@ def check_diff(cursor, table_name, csv_data, csv_no, recent_data, recent_no, log
     return diff_flag
 
 """
-SQLファイルからテーブル名とメンバーを取得する関数
-
-Parameters:
-    sql_file_path (str): SQLファイルのパス
-
-Returns:
-    tuple: テーブル名とメンバーのリスト、追加のステートメント
-"""
-def get_table_name_and_members(sql_file_path):
-    try:
-        with open(sql_file_path, 'r') as file:
-            insert_query = file.read()
-
-        start_index = insert_query.index('(') + 1
-        end_index = insert_query.index(')', start_index)
-        members = [m.strip() for m in insert_query[start_index:end_index].split(',')]
-        table_name = insert_query.split()[2]
-
-        # VALUESの次の行にある追加のステートメントを取得
-        values_index = insert_query.index('VALUES')
-        next_line_index = insert_query.index('\n', values_index)
-        additional_statement = insert_query[next_line_index:]
-
-        # on_index = insert_query.index('ON')
-        # additional_statement = insert_query[on_index:]
-
-        return table_name, members, additional_statement
-
-    except FileNotFoundError:
-        logger.error(f"ファイルが存在しません: {sql_file_path}")
-        return ""
-"""
 テーブルにデータを挿入する関数
 
 Parameters:

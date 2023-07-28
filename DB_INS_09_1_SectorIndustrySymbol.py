@@ -19,7 +19,6 @@ from DB_INS_09_2_Utils_SectorIndustrySymbol import (
     get_sector_industry_symbol_sp500_data,
     get_sector_industry_sp500_data,
     write_data_to_csv,
-    get_sql_file_info,
     insert_data,
     SectorIndustrySymbol_insert
 )
@@ -92,7 +91,7 @@ def main():
         logger.info(f"sp500のセクター:業種:Symbolの情報をCSVファイルに出力しました: {csv_path}")
 
         # SQLファイル一覧からSQLのファイルの数分SQLデータを取得する。
-        sql_file_info = get_sql_file_info(sql_file_path, logger)
+        sql_file_info = DB_Common_Utils.get_sql_file_info(sql_file_path, logger)
 
         # SQLファイルの対象テーブルのCSVファイルを抽出し、登録する。
         for sql_info in sql_file_info:

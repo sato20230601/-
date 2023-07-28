@@ -66,15 +66,6 @@ def write_data_to_csv(data, csv_file):
 #        writer.writerow(['Sector', 'Industry'])  # ヘッダー行の書き込み
         writer.writerows(data)  # データの書き込み
 
-# SQLファイル情報のクラス
-class SQLFileInfo:
-    def __init__(self, table_name, members, additional_statement, sql_file_path):
-        self.table_name = table_name
-        self.members = members
-        self.additional_statement = additional_statement
-        self.sql_file_path = sql_file_path
-        self.data = None  # データを保持するプロパティ
-
 def insert_data(cursor, table_name, members, additional_statement, csv_data, logger):
     try:
         logger.info(f"関数 insert_data の実行開始")
@@ -122,49 +113,6 @@ def insert_data(cursor, table_name, members, additional_statement, csv_data, log
     except Exception as e:
         logger.exception(f"{table_name}テーブルへのデータの挿入中にエラーが発生しました。")
         return False
-
-def get_sql_file_info(sql_file_path,logger):
-    """
-    SQLファイルの情報を取得します。
-
-    Args:
-        sql_file_path (str): SQLファイルのパス
-
-    Returns:
-        SQLFileInfo: SQLファイルの情報を保持するオブジェクト
-    """
-    with open(sql_file_path, 'r', encoding='utf-8') as sql_file:
-        lines = sql_file.readlines()
-
-    if len(lines) < 2:
-        logger.error("ファイルの内容が正しくありません。")
-        return None
-
-    # SQLディレクトリパスの取得
-    sql_directory_path = lines[0].strip()
-
-    # SQLファイル名の取得
-    sql_files = [line.strip() for line in lines[1:]]
-
-    # 各SQLファイルの情報を保持するリスト
-    sql_file_info = []
-
-    # 各SQLファイルとシンボルを組み合わせて実行
-    for sql_file in sql_files:
-        sql_file_path = f"{sql_directory_path}/{sql_file}"
-
-        logger.debug(f"sql_file_path={sql_file_path}")
-
-        table_name, members, additional_statement = DB_INS_00_Utils.get_table_name_and_members(sql_file_path)
-
-        logger.debug(f"table_name={table_name}")
-        logger.debug(f"members={members}")
-        logger.debug(f"additional_statement={additional_statement}")
-
-        # 各SQLファイルとシンボルを組み合わせて情報を取得し、リストに追加
-        sql_file_info.append(SQLFileInfo(table_name, members, additional_statement, sql_file_path))
-
-    return sql_file_info
 
 def get_en_words(cursor):
     # en_wordsテーブルから登録されている英語の一覧を取得する関数
